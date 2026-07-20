@@ -1,0 +1,13 @@
+# secrets — contains the Gmail app password
+.env
+
+# personal/local Claude Code overrides (project settings.json IS tracked)
+.claude/settings.local.json
+
+# runtime state and logs
+.venv/
+*.log
+processed.json
+processed.json.tmp
+runs.jsonl
+__pycache__/
