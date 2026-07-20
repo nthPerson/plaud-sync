@@ -98,13 +98,14 @@ calendar writes. `.env` overrides it correctly — if calendar events stop appea
 **The prompt file is read once at startup** (`main()` reads it before the loop). Editing
 `plaud-sync-prompt.txt` has no effect until the service restarts.
 
-**Neither the email nor the Plaud MCP exposes a durable recording URL.** `plaud_link` is `null` on
-every run because Plaud's emails carry no link, and the MCP has none either: `presigned_url` is null
-and the only `data_link`s are S3 URLs that expire in 5 minutes (`X-Amz-Expires=300`). So lookup is
-always by TITLE + DATE (subject format `[Plaud-AutoFlow] <recording title>`), and the durable join
-key is the recording **`id`** returned by `list_files`/`get_file`. The prompt records that id in the
-Notion `Source Link` as `plaud://file/<id>` — not clickable (no public URL exists), but stable and
-retrievable via the MCP, which is what takes the load off the fragile title match.
+**Neither the email nor the Plaud MCP returns a link, but the recording `id` reconstructs one.**
+`plaud_link` is `null` on every run because Plaud's emails carry no link, and the MCP has none either:
+`presigned_url` is null and the only `data_link`s are S3 URLs that expire in 5 minutes
+(`X-Amz-Expires=300`). So lookup is always by TITLE + DATE (subject format
+`[Plaud-AutoFlow] <recording title>`), and the durable join key is the recording **`id`** returned by
+`list_files`/`get_file`. The Plaud web app addresses a recording as `https://web.plaud.ai/file/<id>`,
+so the prompt writes that (clickable) URL into the Notion `Source Link` — taking the load off the
+fragile title match.
 
 **Failures are recorded, not retried.** `process_message` marks the UID processed and `\Seen`
 regardless of outcome, deliberately, to avoid a reprocess loop. A failed run needs manual replay.
@@ -129,7 +130,7 @@ Schema (the prompt must stay in sync with these exact option strings):
 - `Type` — Reminder · Goal · Research · Dev · Client · Lecture · Coursework · Personal
 - `Project` — FAMAIL · LARK · Construction Diagram/Doc AI · Car Sounds · Caltrans · Evidential Deep Learning · Unknown
 - `Tags` (multi) — Meeting · Idea · Task · Follow-up · Personal
-- `Source Link` (url) — set by the prompt to `plaud://file/<recording id>` (durable join key).
+- `Source Link` (url) — set by the prompt to `https://web.plaud.ai/file/<recording id>` (clickable join key).
 - `Synced` (created_time, auto), `Reviewed` (checkbox, left for the human)
 
 ## Cost, and the streamlining goal

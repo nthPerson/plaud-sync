@@ -25,10 +25,10 @@ option strings and picking the single best value for each select field:
 
 - Date (date): the recording's date.
 
-- Source Link (url): the durable join key back to Plaud. The MCP exposes no public recording URL, so
-  set this to `plaud://file/<id>` using the recording `id` captured in Step 1 (e.g.
-  `plaud://file/35f4b410f5352c617bcea127851505e9`). Always set this — it is what makes the note
-  retrievable via the Plaud MCP later without depending on the fragile title match.
+- Source Link (url): the durable, clickable link back to the Plaud recording. Set it to
+  `https://web.plaud.ai/file/<id>` using the recording `id` captured in Step 1 (e.g.
+  `https://web.plaud.ai/file/35f4b410f5352c617bcea127851505e9`). Always set this — the `id` is the
+  stable join key, so this link (not the fragile title) is what ties the note back to Plaud.
 
 - Area (select — one of): Personal, Academics, Work, Research
     - Research  -> research-project work: FAMAIL, FATE, Caltrans ODA, or any academic-research discussion.
