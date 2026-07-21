@@ -43,8 +43,9 @@ a service restart.
 | `.env` | All config. Loaded by systemd via `EnvironmentFile=`. Contains a Gmail **app password**. |
 | `plaud-sync.service` | Repo copy of the unit. **Drifted from the installed one — see gotchas.** |
 | `processed.json` | Set of handled IMAP UIDs. Idempotency guard. |
-| `runs.jsonl` | One JSON record per Claude run: `ok`, `cost_usd`, `duration_ms`, `report` (parsed JSON report; `summary` holds raw text only when parsing fails). |
-| `project-routing.json` | Project → Notion destination registry for the distribution step. URLs currently unfilled. |
+| `runs.jsonl` | One JSON record per Claude run: `ok`, `attempt` (1 or 2), `cost_usd`, `duration_ms`, `report` (parsed JSON report; `summary` holds raw text only when parsing fails). |
+| `weekly_digest.py` + `weekly-digest-prompt.txt` | Sunday-evening digest: headless Claude queries the Notion DB, script emails the result to `NOTIFY_EMAIL`. |
+| `plaud-digest.service` / `plaud-digest.timer` | Systemd units for the digest (installed copies live in `/etc/systemd/system/`). |
 | `plaud-sync.log` | Human log (also goes to journald). |
 | `.venv/` | Python 3.12 venv holding `IMAPClient==3.1.0`. **The service runs this interpreter.** |
 
@@ -78,6 +79,11 @@ claude -p "$(cat plaud-sync-prompt.txt)
 
 # reprocess an email the watcher already consumed: drop its UID from processed.json,
 # mark it unread in Gmail, then restart the service.
+
+# weekly digest (Sunday 17:00 via plaud-digest.timer; emails NOTIFY_EMAIL)
+systemctl list-timers plaud-digest.timer
+sudo systemctl start plaud-digest.service      # fire one digest right now (sends real email)
+set -a; source .env; set +a; .venv/bin/python weekly_digest.py   # same, foreground
 ```
 
 There are no tests, no build, and no linter configured.
@@ -108,8 +114,12 @@ calendar writes. `.env` overrides it correctly — if calendar events stop appea
 so the prompt writes that (clickable) URL into the Notion `Source Link` — taking the load off the
 fragile title match.
 
-**Failures are recorded, not retried.** `process_message` marks the UID processed and `\Seen`
-regardless of outcome, deliberately, to avoid a reprocess loop. A failed run needs manual replay.
+**Failures get exactly ONE automatic retry, then an email alert.** After a failed run,
+`process_message` waits `RETRY_DELAY` (default 120s) and re-runs once — safe because the prompt's
+Step 2 makes runs idempotent (create-or-update keyed on Source Link). If the retry also fails, a
+failure alert is emailed to `NOTIFY_EMAIL` via the same Gmail account (SMTP + app password), and the
+UID is still marked processed/`\Seen` to avoid a reprocess loop. Beyond that one retry, a failed run
+needs manual replay (`/replay-note`).
 
 **Auth is inherited, not configured.** Headless `claude -p` uses the interactive login and
 user-scope MCP OAuth tokens of user `robert`. That is why the unit pins `User=robert` and
@@ -145,9 +155,13 @@ Schema (the prompt must stay in sync with these exact option strings):
 - `Project` — FAMAIL · LARK · Construction Diagram/Doc AI · Car Sounds · Caltrans · Evidential Deep Learning · Unknown
 - `Tags` (multi) — Meeting · Idea · Task · Follow-up · Personal
 - `Source Link` (url) — set by the prompt to `https://web.plaud.ai/file/<recording id>` (clickable join key).
-- `Routing` (select) — Pending · Done · Skip. **Machine-owned** hand-off flag for the distribution
-  step: the sync run sets Pending (real project) or Skip (Unknown); only the distributor sets Done.
+- `Meeting Date` (date) — set to the recording's start date+time ONLY when Type = Meeting; the
+  project dashboards use it as their meeting timeline column.
 - `Synced` (created_time, auto), `Reviewed` (checkbox, left for the human)
+
+Project dashboards consume this DB via **linked database views** (filtered `Project = X`, with a
+`Type = Meeting` tab) — there is deliberately NO distribution automation copying notes elsewhere,
+and a `Routing` property that once existed for that purpose was removed. Don't reintroduce either.
 
 ## Cost, and the streamlining goal
 

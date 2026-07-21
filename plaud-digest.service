@@ -1,0 +1,13 @@
+[Unit]
+Description=Plaud weekly digest (one-shot; scheduled by plaud-digest.timer)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+# Same auth model as plaud-sync.service: must run as the user with claude login + MCP tokens.
+User=robert
+WorkingDirectory=/home/robert/plaud-sync
+EnvironmentFile=/home/robert/plaud-sync/.env
+Environment=HOME=/home/robert
+ExecStart=/home/robert/plaud-sync/.venv/bin/python /home/robert/plaud-sync/weekly_digest.py

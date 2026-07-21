@@ -51,8 +51,8 @@ option strings and picking the single best value for each select field:
       first-class job of this automation (this database replaces Notion's AI Meeting Notes): if the
       transcript shows more than one genuine participant, or the recording is clearly of a meeting,
       prefer Meeting over every other Type.
-    - For non-meetings, prefer the recording's applied Plaud template as the signal; otherwise infer
-      from content. Use "Goal" for goal-setting / objective-planning recordings.
+    - For non-meetings, infer from content — get_file returns NO template or folder metadata, so the
+      content is the only signal. Use "Goal" for goal-setting / objective-planning recordings.
 
 - Project (select — one of): FAMAIL, LARK, Construction Diagram/Doc AI, Car Sounds, Unknown, Caltrans, Evidential Deep Learning
     - FAMAIL              -> fairness-aware (multi-agent) imitation learning research; GAIL, KDD paper,
@@ -73,10 +73,9 @@ option strings and picking the single best value for each select field:
     - Follow-up -> contains items to circle back on.
     - Personal  -> contains goals / introspections.
 
-- Routing (select): machine-owned hand-off flag for the project distributor — a human never sets it.
-    - "Pending" if Project is a real project (anything except Unknown).
-    - "Skip"    if Project = Unknown.
-    Never set "Done" — only the distribution step does that.
+- Meeting Date (date): ONLY when Type = Meeting, set this to the recording's start date AND time
+  (get_file's `start_at`). Leave it unset for every other Type — the project dashboards use it as
+  the meeting-specific timeline column.
 
 - Do NOT set "Synced" (automatic created-time) or "Reviewed" (human-owned).
 
@@ -120,7 +119,7 @@ Shape:
   "action": "created" | "updated",
   "notion_page": { "title": ..., "url": ... },
   "source_link": "https://web.plaud.ai/file/<id>",
-  "properties": { "area": ..., "type": ..., "project": ..., "tags": [...], "routing": ... },
+  "properties": { "area": ..., "type": ..., "project": ..., "tags": [...] },
   "calendar_events_created": [ { "title": ..., "date": ... } ]
 }
 Do NOT include the transcript or summary text in the report.

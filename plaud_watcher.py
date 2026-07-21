@@ -20,9 +20,12 @@ import json
 import time
 import email
 import logging
+import smtplib
 import subprocess
 from email.header import decode_header, make_header
+from email.message import EmailMessage
 from datetime import datetime, timezone
+from logging.handlers import RotatingFileHandler
 
 from imapclient import IMAPClient
 
@@ -46,12 +49,19 @@ CLAUDE_TIMEOUT = int(os.environ.get("CLAUDE_TIMEOUT", "600"))
 ALLOWED_TOOLS = os.environ.get(
     "ALLOWED_TOOLS", "mcp__plaud__*,mcp__notion__*,mcp__google-calendar__*"
 )
+RETRY_DELAY  = int(os.environ.get("RETRY_DELAY", "120"))  # seconds before the single failure retry
+NOTIFY_EMAIL = os.environ.get("NOTIFY_EMAIL", "")         # failure alerts go here; empty disables
+SMTP_HOST    = os.environ.get("SMTP_HOST", "smtp.gmail.com")
+SMTP_PORT    = int(os.environ.get("SMTP_PORT", "465"))
 IDLE_TIMEOUT = 29 * 60  # re-issue IDLE before the ~30-min server cutoff
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s",
-    handlers=[logging.FileHandler(LOG_FILE), logging.StreamHandler(sys.stdout)],
+    handlers=[
+        RotatingFileHandler(LOG_FILE, maxBytes=1_000_000, backupCount=3),
+        logging.StreamHandler(sys.stdout),
+    ],
 )
 log = logging.getLogger("plaud-sync")
 
@@ -160,7 +170,31 @@ def extract_report(text):
         return None
 
 
-def log_run(uid, subject, plaud_link, run):
+def notify_failure(uid, subject, run):
+    """Email a failure alert via the same Gmail account the watcher reads (best-effort)."""
+    if not NOTIFY_EMAIL:
+        return
+    msg = EmailMessage()
+    msg["From"] = IMAP_USER
+    msg["To"] = NOTIFY_EMAIL
+    msg["Subject"] = f"[plaud-sync] sync FAILED: {subject[:120]}"
+    msg.set_content(
+        f"Both attempts failed for uid={uid}.\n"
+        f"Subject: {subject}\n\n"
+        f"stderr tail:\n{(run['stderr'] or '(empty)')[-1500:]}\n\n"
+        f"Details are in {RUNS_LOG}. To replay: mark the email unread, remove the uid from "
+        f"{STATE_FILE}, and restart the service — or use /replay-note in Claude Code."
+    )
+    try:
+        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=30) as smtp:
+            smtp.login(IMAP_USER, IMAP_PASSWORD)
+            smtp.send_message(msg)
+        log.info("Failure alert emailed to %s", NOTIFY_EMAIL)
+    except Exception as e:
+        log.warning("Could not email failure alert: %s", e)
+
+
+def log_run(uid, subject, plaud_link, run, attempt=1):
     """Append one structured record per run to RUNS_LOG (JSON Lines). Returns overall ok."""
     summary, cost, duration_ms, is_error = None, None, None, None
     try:
@@ -179,6 +213,7 @@ def log_run(uid, subject, plaud_link, run):
         "subject": subject,
         "plaud_link": plaud_link,
         "ok": ok,
+        "attempt": attempt,
         "cost_usd": cost,
         "duration_ms": duration_ms,
         "report": report,                       # parsed JSON report (None if unparseable)
@@ -200,8 +235,16 @@ def process_message(server, uid, base_prompt, processed):
     plaud_link = m.group(0) if m else None
     log.info("New Plaud email uid=%s subject=%r link=%s", uid, subject, plaud_link)
 
-    run = run_claude(build_prompt(base_prompt, subject, plaud_link, received))
+    prompt = build_prompt(base_prompt, subject, plaud_link, received)
+    run = run_claude(prompt)
     ok = log_run(uid, subject, plaud_link, run)     # append a structured record to runs.jsonl
+    if not ok:
+        # One delayed retry: transient API/MCP failures are common enough to be worth a second
+        # attempt, and the prompt's create-or-update idempotency makes the retry safe.
+        log.warning("Run failed for uid=%s — retrying once in %ss", uid, RETRY_DELAY)
+        time.sleep(RETRY_DELAY)
+        run = run_claude(prompt)
+        ok = log_run(uid, subject, plaud_link, run, attempt=2)
     log.info("Run recorded (ok=%s) -> %s", ok, RUNS_LOG)
 
     # Mark seen + record UID regardless, so we never reprocess in a loop.
@@ -213,6 +256,7 @@ def process_message(server, uid, base_prompt, processed):
     save_state(processed)
     if not ok:
         log.error("uid=%s did NOT sync cleanly — see %s and re-run manually if needed.", uid, RUNS_LOG)
+        notify_failure(uid, subject, run)
 
 
 def search_and_process(server, base_prompt, processed):
