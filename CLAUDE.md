@@ -44,7 +44,7 @@ a service restart.
 | `plaud-sync.service` | Repo copy of the unit. **Drifted from the installed one — see gotchas.** |
 | `processed.json` | Set of handled IMAP UIDs. Idempotency guard. |
 | `runs.jsonl` | One JSON record per Claude run: `ok`, `attempt` (1 or 2), `cost_usd`, `duration_ms`, `report` (parsed JSON report; `summary` holds raw text only when parsing fails). |
-| `weekly_digest.py` + `weekly-digest-prompt.txt` | Sunday-evening digest: headless Claude queries the Notion DB, script emails the result to `NOTIFY_EMAIL`. |
+| `weekly_digest.py` + `weekly-digest-prompt.txt` | Sunday-evening digest: headless Claude queries the Notion DB and composes an HTML email (tables, inline styles only) with a plain-text fallback; script sends it to `NOTIFY_EMAIL`. |
 | `plaud-digest.service` / `plaud-digest.timer` | Systemd units for the digest (installed copies live in `/etc/systemd/system/`). |
 | `plaud-sync.log` | Human log (also goes to journald). |
 | `.venv/` | Python 3.12 venv holding `IMAPClient==3.1.0`. **The service runs this interpreter.** |
@@ -157,7 +157,8 @@ Schema (the prompt must stay in sync with these exact option strings):
 - `Source Link` (url) — set by the prompt to `https://web.plaud.ai/file/<recording id>` (clickable join key).
 - `Meeting Date` (date) — set to the recording's start date+time ONLY when Type = Meeting; the
   project dashboards use it as their meeting timeline column.
-- `Synced` (created_time, auto), `Reviewed` (checkbox, left for the human)
+- `Synced` (created_time, auto). A `Reviewed` checkbox once existed but was removed — the user
+  decided a review workflow was maintenance they'd never keep up with; don't reintroduce one.
 
 Project dashboards consume this DB via **linked database views** (filtered `Project = X`, with a
 `Type = Meeting` tab) — there is deliberately NO distribution automation copying notes elsewhere,

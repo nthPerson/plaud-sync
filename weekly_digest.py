@@ -43,12 +43,15 @@ def extract_json(text):
         return None
 
 
-def send(subject, body):
+def send(subject, body, html=None):
+    """Send plain text, with an optional rendered-HTML alternative part."""
     msg = EmailMessage()
     msg["From"] = IMAP_USER
     msg["To"] = NOTIFY_EMAIL
     msg["Subject"] = subject
     msg.set_content(body)
+    if html:
+        msg.add_alternative(html, subtype="html")
     with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=30) as smtp:
         smtp.login(IMAP_USER, IMAP_PASSWORD)
         smtp.send_message(msg)
@@ -77,7 +80,7 @@ def main():
     except (json.JSONDecodeError, TypeError):
         pass
 
-    if res.returncode != 0 or not report or "body" not in report:
+    if res.returncode != 0 or not report or "body_html" not in report:
         send(
             "[plaud-sync] weekly digest FAILED",
             f"exit={res.returncode}\n\nstderr tail:\n{(res.stderr or '(empty)')[-1500:]}"
@@ -86,7 +89,15 @@ def main():
         sys.exit(1)
 
     footer = f"\n\n--\nplaud-sync weekly digest · run cost ${cost:.2f}" if cost else ""
-    send(report.get("subject") or "Plaud weekly digest", report["body"] + footer)
+    html_footer = (
+        f'<p style="color:#888;font-size:12px;margin-top:24px">'
+        f"plaud-sync weekly digest · run cost ${cost:.2f}</p>" if cost else ""
+    )
+    send(
+        report.get("subject") or "Plaud weekly digest",
+        (report.get("body_text") or "See the HTML version of this email.") + footer,
+        html=report["body_html"] + html_footer,
+    )
     print(f"Digest sent to {NOTIFY_EMAIL} (cost ${cost or 0:.2f})")
 
 

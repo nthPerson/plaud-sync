@@ -77,7 +77,7 @@ option strings and picking the single best value for each select field:
   (get_file's `start_at`). Leave it unset for every other Type — the project dashboards use it as
   the meeting-specific timeline column.
 
-- Do NOT set "Synced" (automatic created-time) or "Reviewed" (human-owned).
+- Do NOT set "Synced" — it is an automatic created-time field.
 
 Page body — write three sections:
     ## Summary
