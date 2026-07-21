@@ -1,0 +1,16 @@
+{
+  "_readme": [
+    "Project → destination registry for the distribution step (Step 6 of plaud-sync-prompt.txt).",
+    "Keys must EXACTLY match the 'Project' select options in the Plaud Synced Notes database.",
+    "url: the Notion page or database where this project's notes should be distributed.",
+    "     Leave empty ('') to disable distribution for that project (notes stay Routing=Pending).",
+    "The watcher reads this file fresh for every email — edits take effect on the NEXT run,",
+    "no service restart needed."
+  ],
+  "FAMAIL": { "url": "" },
+  "LARK": { "url": "" },
+  "Construction Diagram/Doc AI": { "url": "" },
+  "Car Sounds": { "url": "" },
+  "Caltrans": { "url": "" },
+  "Evidential Deep Learning": { "url": "" }
+}

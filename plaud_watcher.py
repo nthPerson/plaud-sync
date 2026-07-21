@@ -138,17 +138,40 @@ def run_claude(prompt):
     return {"ok": res.returncode == 0, "stdout": res.stdout or "", "stderr": res.stderr or ""}
 
 
+def extract_report(text):
+    """Pull the JSON report object out of the model's final text.
+
+    The prompt demands raw JSON, but tolerate markdown fences or stray prose
+    around it so runs.jsonl stays machine-parseable either way.
+    """
+    if not text:
+        return None
+    m = re.search(r"```(?:json)?\s*(\{.*\})\s*```", text, re.DOTALL)
+    if m:
+        candidate = m.group(1)
+    else:
+        start, end = text.find("{"), text.rfind("}")
+        if start == -1 or end <= start:
+            return None
+        candidate = text[start:end + 1]
+    try:
+        return json.loads(candidate)
+    except json.JSONDecodeError:
+        return None
+
+
 def log_run(uid, subject, plaud_link, run):
     """Append one structured record per run to RUNS_LOG (JSON Lines). Returns overall ok."""
     summary, cost, duration_ms, is_error = None, None, None, None
     try:
         data = json.loads(run["stdout"])       # `claude -p --output-format json` result envelope
-        summary = data.get("result")           # the model's final text = the JSON summary we asked for
+        summary = data.get("result")           # the model's final text = the JSON report we asked for
         cost = data.get("total_cost_usd")
         duration_ms = data.get("duration_ms")
         is_error = data.get("is_error")
     except (json.JSONDecodeError, TypeError):
         summary = (run["stdout"] or "")[-2000:] or None    # fallback: raw stdout tail
+    report = extract_report(summary)
     ok = run["ok"] and not is_error
     record = {
         "time": datetime.now(timezone.utc).isoformat(),
@@ -158,7 +181,8 @@ def log_run(uid, subject, plaud_link, run):
         "ok": ok,
         "cost_usd": cost,
         "duration_ms": duration_ms,
-        "summary": summary,
+        "report": report,                       # parsed JSON report (None if unparseable)
+        "summary": None if report else summary, # raw text kept only when parsing failed
         "error": None if ok else ((run["stderr"] or "")[-1000:] or "see summary"),
     }
     with open(RUNS_LOG, "a", encoding="utf-8") as f:

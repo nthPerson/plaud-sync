@@ -43,7 +43,8 @@ a service restart.
 | `.env` | All config. Loaded by systemd via `EnvironmentFile=`. Contains a Gmail **app password**. |
 | `plaud-sync.service` | Repo copy of the unit. **Drifted from the installed one — see gotchas.** |
 | `processed.json` | Set of handled IMAP UIDs. Idempotency guard. |
-| `runs.jsonl` | One JSON record per Claude run: `ok`, `cost_usd`, `duration_ms`, `summary`. |
+| `runs.jsonl` | One JSON record per Claude run: `ok`, `cost_usd`, `duration_ms`, `report` (parsed JSON report; `summary` holds raw text only when parsing fails). |
+| `project-routing.json` | Project → Notion destination registry for the distribution step. URLs currently unfilled. |
 | `plaud-sync.log` | Human log (also goes to journald). |
 | `.venv/` | Python 3.12 venv holding `IMAPClient==3.1.0`. **The service runs this interpreter.** |
 
@@ -118,6 +119,18 @@ invocation. Verify MCP health with `claude mcp list`.
 **IMAP UIDs are per-folder and not globally stable.** If the mailbox's UIDVALIDITY ever changes,
 `processed.json` becomes meaningless and old mail can reprocess.
 
+**`get_file` returns the FULL transcript whether you want it or not** (`source_list`, data_type
+`transaction`). A prompt instruction to "skip the transcript" saves zero input cost — the tokens
+arrive in context regardless. Only the *output* side (copying it into the Notion page) is optional
+cost, at roughly $0.15 per 10k transcript tokens on Sonnet. `get_note`/`get_transcript` are strict
+subsets of `get_file` — one `get_file` call fetches everything; extra calls are pure waste.
+
+**Plaud's mind map is NOT exposed by the MCP** — no mindmap entry appears in any recording's
+`note_list` (only `auto_sum_note`). Earlier notes said "No mind map was generated" because Claude
+genuinely never receives one. The prompt therefore *synthesizes* a Mermaid `mindmap` code block from
+the summary headings + `outline` topics; Notion renders it as a diagram. Don't "fix" a missing mind
+map by hunting for a Plaud API that provides it — it doesn't exist in the MCP.
+
 ## Notion target
 
 Database **🎙️ Plaud Synced Notes** — `https://app.notion.com/p/61e12e128c7f473b94f22641d8a36260`
@@ -127,10 +140,13 @@ Schema (the prompt must stay in sync with these exact option strings):
 
 - `Name` (title), `Date` (date)
 - `Area` — Personal · Academics · Work · Research
-- `Type` — Reminder · Goal · Research · Dev · Client · Lecture · Coursework · Personal
+- `Type` — **Meeting** · Reminder · Goal · Research · Dev · Client · Lecture · Coursework · Personal
+  (Meeting detection is a first-class job: this DB replaces Notion's AI Meeting Notes)
 - `Project` — FAMAIL · LARK · Construction Diagram/Doc AI · Car Sounds · Caltrans · Evidential Deep Learning · Unknown
 - `Tags` (multi) — Meeting · Idea · Task · Follow-up · Personal
 - `Source Link` (url) — set by the prompt to `https://web.plaud.ai/file/<recording id>` (clickable join key).
+- `Routing` (select) — Pending · Done · Skip. **Machine-owned** hand-off flag for the distribution
+  step: the sync run sets Pending (real project) or Skip (Unknown); only the distributor sets Done.
 - `Synced` (created_time, auto), `Reviewed` (checkbox, left for the human)
 
 ## Cost, and the streamlining goal
@@ -142,9 +158,10 @@ Levers:
    `collection://bbc6c9aa-a96b-4501-a41a-8bd1b5a75866`.
 2. ✅ *Applied.* Step 1 now calls `list_files` with `query` (title words) **and** `date_from`/
    `date_to` (email date) together, targeting a single-result lookup instead of listing + scanning.
-3. ⬜ *Open.* Step 1 says *skip the transcript*, but Step 3 says *"scan the summary and transcript"* —
-   an internal contradiction. The transcript is the expensive thing the user eventually wants
-   included; any change here directly drives cost.
+3. ✅ *Resolved (deliberately).* The transcript is now INCLUDED in the Notion page by design. This
+   was cheaper than it looked: `get_file` returns the transcript unconditionally (input cost was
+   always being paid), so inclusion only adds output tokens. The old "skip the transcript" line
+   also contradicted the calendar step, which scans the transcript.
 
-The n=3 baseline predates levers 1–2 — re-measure against `runs.jsonl` (`cost_usd`, `duration_ms`)
-after the next few real runs to quantify the win.
+The n=3 / ~$0.59 baseline predates all three levers — compare new runs in `runs.jsonl` (`cost_usd`,
+`duration_ms`) against it to quantify the net effect (levers 1–2 push cost down, lever 3 up).

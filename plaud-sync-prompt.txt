@@ -12,13 +12,23 @@ with BOTH filters at once:
     this prompt. Plaud emails arrive within minutes of the recording, so this window is correct; if
     it returns nothing, widen to the day before and after and pick the newest matching title.
 This should return exactly one recording. Capture its stable `id` — this ID (NOT the title) is the
-durable join key back to Plaud, so carry it into Step 2.
+durable join key back to Plaud.
 
-Then fetch its full data (skip the transcript): title, date/time, the AI summary, the mind map (if
-provided), the applied template/type, and the folder.
+Then call `mcp__plaud__get_file` with that id. This ONE call returns everything you need:
+  - the AI summary (`note_list`, data_type `auto_sum_note`),
+  - the topic outline (`source_list`, data_type `outline`),
+  - the FULL speaker-labeled transcript (`source_list`, data_type `transaction`).
+Do NOT also call `get_note` or `get_transcript` — they return subsets of the same payload.
+Plaud's mind map is NOT exposed by the MCP at all — do not go looking for it; Step 3 builds an
+equivalent from the summary + outline instead.
 
-# Step 2 — Create ONE page in the "Plaud Synced Notes" Notion database
-Create the page directly in this data source — do NOT search for the database first:
+# Step 2 — Check whether this recording already has a Notion page
+Query the data source `collection://bbc6c9aa-a96b-4501-a41a-8bd1b5a75866` for a row whose
+"Source Link" equals `https://web.plaud.ai/file/<id>`. If a page exists, UPDATE that page in Step 3
+(properties and content) instead of creating a duplicate. Otherwise create a new page.
+
+# Step 3 — Create (or update) ONE page in the "Plaud Synced Notes" Notion database
+Write directly to this data source — do NOT search for the database first:
     collection://bbc6c9aa-a96b-4501-a41a-8bd1b5a75866   ("🎙️ Plaud Synced Notes")
 Give it the EXACT recording title provided by the Plaud MCP. Set these properties, using the EXACT
 option strings and picking the single best value for each select field:
@@ -36,9 +46,13 @@ option strings and picking the single best value for each select field:
     - Work      -> LARK, Sidekick AI assistant, Car Sounds, Construction Diagram/Doc AI, client/partner calls, professional or business dev work.
     - Personal  -> personal memos, reminders, ideas, health topics, or goals not tied to work/school/research.
 
-- Type (select — one of): Reminder, Goal, Research, Dev, Client, Lecture, Coursework, Personal
-    Prefer the recording's applied Plaud template as the signal; otherwise infer from content.
-    Use "Goal" for goal-setting / objective-planning recordings.
+- Type (select — one of): Meeting, Reminder, Goal, Research, Dev, Client, Lecture, Coursework, Personal
+    - Meeting -> any multi-person meeting, call, or group discussion. Detecting meetings is a
+      first-class job of this automation (this database replaces Notion's AI Meeting Notes): if the
+      transcript shows more than one genuine participant, or the recording is clearly of a meeting,
+      prefer Meeting over every other Type.
+    - For non-meetings, prefer the recording's applied Plaud template as the signal; otherwise infer
+      from content. Use "Goal" for goal-setting / objective-planning recordings.
 
 - Project (select — one of): FAMAIL, LARK, Construction Diagram/Doc AI, Car Sounds, Unknown, Caltrans, Evidential Deep Learning
     - FAMAIL              -> fairness-aware (multi-agent) imitation learning research; GAIL, KDD paper,
@@ -59,33 +73,54 @@ option strings and picking the single best value for each select field:
     - Follow-up -> contains items to circle back on.
     - Personal  -> contains goals / introspections.
 
-- Do NOT set "Synced" — it is an automatic created-time field.
+- Routing (select): machine-owned hand-off flag for the project distributor — a human never sets it.
+    - "Pending" if Project is a real project (anything except Unknown).
+    - "Skip"    if Project = Unknown.
+    Never set "Done" — only the distribution step does that.
 
-Page body — write two sections:
+- Do NOT set "Synced" (automatic created-time) or "Reviewed" (human-owned).
+
+Page body — write three sections:
     ## Summary
-    <the Plaud AI summary, preserving its headings/structure>i
+    <the Plaud AI summary, preserving its headings/structure>
 
     ## Mind Map
-    <the Plaud mind map>
+    <Plaud's own mind map is not exported by the MCP, so synthesize an equivalent: ONE Mermaid
+    `mindmap` code block built from the summary's heading structure and the outline topics.
+    Root node = a 2-4 word gist of the title. First-level branches = the outline topics (or the
+    summary's top headings if they are better). Leaves = the key points under each. Keep node
+    labels under ~6 words and the whole map to roughly 15-30 nodes — a readable diagram, not a
+    dump. Notion renders the ```mermaid block as a diagram.>
 
-# Step 3 — Create Google Calendar events (only for genuinely dated items)
+    ## Transcript
+    <the FULL transcript from Step 1's `get_file` payload (data_type "transaction"). Format each
+    segment as its own paragraph prefixed with the speaker in bold — e.g. **Speaker 1:** text.
+    Include every segment verbatim; do not summarize, truncate, or paraphrase.>
+
+# Step 4 — Create Google Calendar events (only for genuinely dated items)
 Scan the summary and transcript for anything with a concrete date/time or deadline: meetings to
 schedule, due dates, deadlines, reminders with a time, follow-ups tied to a date. For each such item:
     - Resolve relative dates ("Friday", "next week", "in 3 days", "by the 15th") to an ABSOLUTE date,
       using the RECORDING'S date as the reference point — NOT today's date.
     - Using the Google Calendar MCP, create an event on the primary calendar of the connected account.
-      Title = a concise action with Project in parentheses (if applicable). If a specific time is given, 
+      Title = a concise action with Project in parentheses (if applicable). If a specific time is given,
       use it; otherwise make it an all-day event.
       In the description, put a multi-line context (max 3 sentences) plus a link to the Notion page you just created (and
-      the Plaud source link if available).
+      the Plaud source link).
     - Only create events for items that are genuinely scheduled or have a real deadline. Do NOT invent
       events for vague or undated mentions. If nothing qualifies, create no events.
     - Do not create duplicate events for the same item.
     - Do not create duplicate events for very similar items that already exist on the calendar.
 
-# Step 4 — Report
-Output ONLY a single JSON object (no prose before or after) summarizing what you did: the Notion page
-title and URL, the Plaud recording id (as `source_link`), the chosen Area / Type / Project / Tags,
-and a list of any calendar events created (title + date). Do NOT include the full transcript. This
-JSON is captured into the automation's run log.
-
+# Step 5 — Report
+Output the raw JSON object ONLY — your final message must start with `{` and end with `}`. No prose,
+no markdown code fences, nothing before or after. It is machine-parsed into the automation's run log.
+Shape:
+{
+  "action": "created" | "updated",
+  "notion_page": { "title": ..., "url": ... },
+  "source_link": "https://web.plaud.ai/file/<id>",
+  "properties": { "area": ..., "type": ..., "project": ..., "tags": [...], "routing": ... },
+  "calendar_events_created": [ { "title": ..., "date": ... } ]
+}
+Do NOT include the transcript or summary text in the report.
