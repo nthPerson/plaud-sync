@@ -43,6 +43,13 @@ def extract_json(text):
         return None
 
 
+def fix_notion_links(text):
+    """The SQL query returns bare https://app.notion.com/<id> URLs, which 404 in a
+    browser; the working page form is https://app.notion.com/p/<id>. Normalize any
+    the model left unconverted."""
+    return re.sub(r"(app\.notion\.com/)(?!p/)([0-9a-f]{32})", r"\1p/\2", text)
+
+
 def send(subject, body, html=None):
     """Send plain text, with an optional rendered-HTML alternative part."""
     msg = EmailMessage()
@@ -95,8 +102,8 @@ def main():
     )
     send(
         report.get("subject") or "Plaud weekly digest",
-        (report.get("body_text") or "See the HTML version of this email.") + footer,
-        html=report["body_html"] + html_footer,
+        fix_notion_links((report.get("body_text") or "See the HTML version of this email.") + footer),
+        html=fix_notion_links(report["body_html"] + html_footer),
     )
     print(f"Digest sent to {NOTIFY_EMAIL} (cost ${cost or 0:.2f})")
 

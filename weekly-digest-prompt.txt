@@ -7,6 +7,9 @@ Query the data source collection://bbc6c9aa-a96b-4501-a41a-8bd1b5a75866 with SQL
 Area, Type, Project, Tags, "date:Date:start" for rows where date("date:Date:start") >=
 date('now', '-7 days'), newest first.
 
+IMPORTANT — the `url` values come back as `https://app.notion.com/<32-hex-id>`, which 404s in a
+browser. When linking, insert `/p/`: `https://app.notion.com/p/<32-hex-id>`.
+
 # Step 2 — Compose the email body as HTML
 Build a self-contained HTML fragment (no <html>/<head>/<body> wrapper — just the content). Email
 clients ignore stylesheets, so use ONLY inline style attributes. Keep the styling minimal and
