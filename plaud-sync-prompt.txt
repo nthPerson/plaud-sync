@@ -43,8 +43,8 @@ option strings and picking the single best value for each select field:
 - Area (select — one of): Personal, Academics, Work, Research
     - Research  -> research-project work: FAMAIL, FATE, Caltrans ODA, DiCE Lab research, or any academic-research discussion.
     - Academics -> school lectures, coursework, assignments, study sessions, SCIBER-CT coursework and
-                   program logistics, and the Fall 2026 courses GEOG 582 / COMPE 510 / BDA 696
-                   (NOT research projects).
+                   program logistics, BDA M.S. degree planning/advising, and the Fall 2026 courses
+                   GEOG 582 / COMPE 510 / BDA 696 (NOT research projects).
     - Work      -> LARK, Sidekick AI assistant, Car Sounds, Construction Diagram/Doc AI, client/partner calls, professional or business dev work.
     - Personal  -> personal memos, reminders, ideas, health topics, or goals not tied to work/school/research.
 
@@ -56,7 +56,7 @@ option strings and picking the single best value for each select field:
     - For non-meetings, infer from content — get_file returns NO template or folder metadata, so the
       content is the only signal. Use "Goal" for goal-setting / objective-planning recordings.
 
-- Project (select — one of): FAMAIL, LARK, Construction Diagram/Doc AI, Car Sounds, Caltrans, Evidential Deep Learning, DiCE Lab, SCIBER-CT, GEOG 582, COMPE 510, BDA 696, Personal, Unknown
+- Project (select — one of): FAMAIL, LARK, Construction Diagram/Doc AI, Car Sounds, Caltrans, Evidential Deep Learning, DiCE Lab, SCIBER-CT, BDA M.S., GEOG 582, COMPE 510, BDA 696, Personal, Unknown
     - FAMAIL              -> fairness-aware (multi-agent) imitation learning research; GAIL, KDD paper,
                             fairness metrics, fairness-aware trajectory editing, FATE.
     - LARK                -> merchant card-processing statement analysis; interchange, downgrades,
@@ -82,6 +82,14 @@ option strings and picking the single best value for each select field:
                             visit; cohort/orientation sessions; and program admin — stipend and
                             PaymentWorks, RCR/CITI training, travel, financial aid, sciber-ct@sdsu.edu,
                             Dr. Haririan/Akhavian (Director/PI) and Max (Program Manager).
+    - BDA M.S.            -> SDSU's Big Data Analytics M.S. — the user's 30-unit master's DEGREE
+                            program (director Dr. Ming-Hsiang Tsou). DEGREE-level matters only:
+                            program-of-study and elective planning (electives need graduate-adviser
+                            approval), advising meetings, advancement to candidacy, and the Plan A
+                            culminating experience — BDA 600 capstone seminar, BDA 799A thesis,
+                            thesis committee, defense, and graduation logistics. Course CONTENT files
+                            under the course's own project, and thesis RESEARCH content files under
+                            its research project (see tie-breakers).
     - GEOG 582            -> Fall 2026 course "Intro to GIS Programming" (instructor Atsushi Nara):
                             GIS programming, geospatial data and spatial analysis, spatial Python
                             (ArcPy/ArcGIS, QGIS, GDAL, GeoPandas), mapping — this course's lectures,
@@ -114,6 +122,14 @@ option strings and picking the single best value for each select field:
       SCIBER-CT ARX course: its course content is still COMPE 510; only traineeship-level matters
       (counting the course toward the certificate, program logistics, cohort/stipend/internship
       business) are SCIBER-CT.
+    - Degree vs course vs certificate: BDA M.S. is ONLY for M.S. degree administration (program of
+      study, candidacy, capstone/thesis logistics, advising, graduation). A note about a course's
+      content files to that course's project even when the course satisfies an M.S. requirement
+      (GEOG 582 is the M.S. Python core; COMPE 510 may count as an elective). SCIBER-CT program
+      business is the certificate, never BDA M.S.
+    - Thesis: thesis/capstone ADMIN (committee, candidacy, BDA 600/799A enrollment, deadlines,
+      defense scheduling) -> BDA M.S.; the thesis RESEARCH content itself -> the research project it
+      belongs to (e.g. FAMAIL).
 
 - Tags (multi-select — choose all that apply): Meeting, Idea, Task, Follow-up, Personal
     - Meeting   -> a multi-person meeting or call.

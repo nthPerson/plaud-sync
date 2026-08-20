@@ -176,7 +176,7 @@ Schema (the prompt must stay in sync with these exact option strings):
 - `Type` — **Meeting** · Reminder · Goal · Research · Dev · Client · Lecture · Coursework · Personal
   (Meeting detection is a first-class job: this DB replaces Notion's AI Meeting Notes)
 - `Project` — FAMAIL · LARK · Construction Diagram/Doc AI · Car Sounds · Caltrans · Evidential Deep
-  Learning · DiCE Lab · SCIBER-CT · GEOG 582 · COMPE 510 · BDA 696 · Personal · Unknown
+  Learning · DiCE Lab · SCIBER-CT · BDA M.S. · GEOG 582 · COMPE 510 · BDA 696 · Personal · Unknown
 - `Tags` (multi) — Meeting · Idea · Task · Follow-up · Personal
 - `Source Link` (url) — set by the prompt to `https://web.plaud.ai/file/<recording id>` (clickable join key).
 - `Meeting Date` (date) — set to the recording's start date+time ONLY when Type = Meeting; the
@@ -202,6 +202,14 @@ relation-filtered Assignments/Lectures/Class Notes/Group Project views. COMPE 51
 SCIBER-CT ARX course: course CONTENT files to `COMPE 510`; only traineeship-level matters file to
 `SCIBER-CT` (the prompt's tie-breakers encode this). When a semester ends, the course options can be
 retired from the prompt but must stay in the Notion select or old rows lose their value.
+
+**`BDA M.S.` is the degree, not its courses.** It catches only M.S. degree ADMINISTRATION — program
+of study, adviser meetings, advancement to candidacy, BDA 600/799A (Plan A thesis) logistics,
+graduation. Course content files to the course's project even when the course satisfies an M.S.
+requirement (GEOG 582 is the M.S. Python core), and thesis RESEARCH content files to its research
+project (e.g. FAMAIL) — the prompt's tie-breakers encode both. Dashboard: *Big Data Analytics M.S.*
+(`3c2eb3065110800bbc45c7e14e2d0eb6`), with the degree-progress tracker and a `Project = BDA M.S.`
+Plaud view.
 
 **`SCIBER-CT` vs `DiCE Lab` are distinct** and both trace to Dr. Akhavian, so his presence in a note
 decides nothing. SCIBER-CT is the NSF NRT traineeship (certificate coursework, cohort, stipend/RCR,
