@@ -155,6 +155,15 @@ genuinely never receives one. The prompt therefore *synthesizes* a Mermaid `mind
 the summary headings + `outline` topics; Notion renders it as a diagram. Don't "fix" a missing mind
 map by hunting for a Plaud API that provides it — it doesn't exist in the MCP.
 
+**Adding a project takes TWO edits — the prompt AND the Notion select.** Listing a new `Project` value
+in `plaud-sync-prompt.txt` does not create it in Notion; the option must also exist on the `Project`
+property of `collection://bbc6c9aa-a96b-4501-a41a-8bd1b5a75866`, or the automation writes a value the
+schema doesn't have. `DiCE Lab` sat in the prompt with no matching Notion option until 2026-08-19. Add
+options with `notion-update-data-source` — note that `ALTER COLUMN "Project" SET SELECT(...)` REPLACES
+the whole option list, so re-list every existing option (with its color) plus the new one, then re-fetch
+to confirm nothing was dropped. Give the new project a dashboard too (linked view filtered
+`Project = X`), or its notes surface nowhere.
+
 ## Notion target
 
 Database **🎙️ Plaud Synced Notes** — `https://app.notion.com/p/61e12e128c7f473b94f22641d8a36260`
@@ -166,7 +175,8 @@ Schema (the prompt must stay in sync with these exact option strings):
 - `Area` — Personal · Academics · Work · Research
 - `Type` — **Meeting** · Reminder · Goal · Research · Dev · Client · Lecture · Coursework · Personal
   (Meeting detection is a first-class job: this DB replaces Notion's AI Meeting Notes)
-- `Project` — FAMAIL · LARK · Construction Diagram/Doc AI · Car Sounds · Caltrans · Evidential Deep Learning · Unknown
+- `Project` — FAMAIL · LARK · Construction Diagram/Doc AI · Car Sounds · Caltrans · Evidential Deep
+  Learning · DiCE Lab · SCIBER-CT · Personal · Unknown
 - `Tags` (multi) — Meeting · Idea · Task · Follow-up · Personal
 - `Source Link` (url) — set by the prompt to `https://web.plaud.ai/file/<recording id>` (clickable join key).
 - `Meeting Date` (date) — set to the recording's start date+time ONLY when Type = Meeting; the
@@ -177,6 +187,18 @@ Schema (the prompt must stay in sync with these exact option strings):
 Project dashboards consume this DB via **linked database views** (filtered `Project = X`, with a
 `Type = Meeting` tab) — there is deliberately NO distribution automation copying notes elsewhere,
 and a `Routing` property that once existed for that purpose was removed. Don't reintroduce either.
+
+**`Personal` and `Unknown` are not the same fallback.** `Personal` is a real project for personal-life
+notes (memos, health, goals, budgeting, travel) and feeds the *Personal Dashboard*. `Unknown` is only
+for a work/academic/research note with no identifiable project, and feeds *📥 Unfiled Notes*
+(`https://app.notion.com/p/3c2eb3065110815dbceffcf1729a0ab8`). The prompt enforces this: `Area = Personal`
+⇒ `Project = Personal`, never `Unknown`. Merging the two was considered and rejected — it would have
+dumped ambiguous work/school notes onto the Personal Dashboard.
+
+**`SCIBER-CT` vs `DiCE Lab` are distinct** and both trace to Dr. Akhavian, so his presence in a note
+decides nothing. SCIBER-CT is the NSF NRT traineeship (certificate coursework, cohort, stipend/RCR,
+internship, hackathon, symposium); DiCE Lab is the research lab's own work. Dashboards:
+*SCIBER-CT Dashboard* (`3c2eb3065110808aacaac47ceac0a82b`), *DiCE Lab* (`257eb306511080fdaeded25422df0518`).
 
 ## Cost, and the streamlining goal
 
