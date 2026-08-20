@@ -121,6 +121,20 @@ failure alert is emailed to `NOTIFY_EMAIL` via the same Gmail account (SMTP + ap
 UID is still marked processed/`\Seen` to avoid a reprocess loop. Beyond that one retry, a failed run
 needs manual replay (`/replay-note`).
 
+**MCP *write* tools in `.claude/settings.json`'s `ask` list silently break the headless watcher.**
+`ask` outranks the `--allowedTools` allow the watcher passes, and headless `claude -p` has no one to
+approve the prompt — so the call stalls, Claude gives up with a prose apology, and nothing is written.
+This blocked `notion-create-pages` on 2026-07-22 even though the identical config had written fine two
+days earlier: a Claude Code precedence change started letting the project `ask` rule win over the CLI
+allowlist. Keep the Notion/Calendar **write** tools OUT of `ask` — the service depends on
+`--allowedTools mcp__notion__*,mcp__claude_ai_Google_Calendar__*` with no `ask` override (the `ask`
+list is now just the `sudo systemctl` entries, which only ever run interactively). And because a
+stalled run still exits 0 with `is_error=false`, `log_run` no longer trusts exit status alone: `ok` is
+gated on `_page_written(report, summary)` — positive evidence (a `notion_page` URL in the report, or a
+Notion link in the final text) that a page actually landed. Before that fix the 07-22 stall logged
+`ok=True`, so it never retried or alerted. A false negative there is harmless: the prompt's
+create-or-update idempotency means the retry updates the page instead of duplicating it.
+
 **Auth is inherited, not configured.** Headless `claude -p` uses the interactive login and
 user-scope MCP OAuth tokens of user `robert`. That is why the unit pins `User=robert` and
 `Environment=HOME=/home/robert`. Running the watcher as any other user silently fails at the Claude

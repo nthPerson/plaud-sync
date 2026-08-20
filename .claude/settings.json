@@ -28,12 +28,7 @@
     ],
     "ask": [
       "Bash(sudo systemctl restart plaud-sync*)",
-      "Bash(sudo systemctl stop plaud-sync*)",
-      "mcp__notion__notion-create-pages",
-      "mcp__notion__notion-update-page",
-      "mcp__claude_ai_Google_Calendar__create_event",
-      "mcp__claude_ai_Google_Calendar__update_event",
-      "mcp__claude_ai_Google_Calendar__delete_event"
+      "Bash(sudo systemctl stop plaud-sync*)"
     ],
     "deny": [
       "Read(//home/robert/plaud-sync/.env)"

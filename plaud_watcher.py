@@ -170,6 +170,26 @@ def extract_report(text):
         return None
 
 
+def _page_written(report, summary):
+    """Did the run actually file the note into Notion?
+
+    `claude -p` can exit 0 with is_error=False yet accomplish nothing — e.g. a
+    write tool blocked pending permission, after which the model gives up with a
+    prose apology (the 2026-07-22 incident: a settings.json `ask` gate stalled
+    `notion-create-pages`). So exit status alone is not proof of success. Require
+    positive evidence a page was created/updated: a notion_page URL in the parsed
+    JSON report, or a Notion page link in the raw final text. Idempotency (Step 2
+    of the prompt keys create-or-update on Source Link) makes a false negative
+    here safe — the retry updates the existing page rather than duplicating it.
+    """
+    if isinstance(report, dict):
+        page = report.get("notion_page")
+        if isinstance(page, dict) and page.get("url"):
+            return True
+    text = summary or ""
+    return "notion.so/" in text or "notion.com/" in text
+
+
 def notify_failure(uid, subject, run):
     """Email a failure alert via the same Gmail account the watcher reads (best-effort)."""
     if not NOTIFY_EMAIL:
@@ -178,10 +198,15 @@ def notify_failure(uid, subject, run):
     msg["From"] = IMAP_USER
     msg["To"] = NOTIFY_EMAIL
     msg["Subject"] = f"[plaud-sync] sync FAILED: {subject[:120]}"
+    try:
+        final_text = json.loads(run["stdout"]).get("result") or ""
+    except (json.JSONDecodeError, TypeError):
+        final_text = run["stdout"] or ""
     msg.set_content(
         f"Both attempts failed for uid={uid}.\n"
         f"Subject: {subject}\n\n"
-        f"stderr tail:\n{(run['stderr'] or '(empty)')[-1500:]}\n\n"
+        f"Claude's final message (tail):\n{(final_text or '(none)')[-1500:]}\n\n"
+        f"stderr tail:\n{(run['stderr'] or '(empty)')[-500:]}\n\n"
         f"Details are in {RUNS_LOG}. To replay: mark the email unread, remove the uid from "
         f"{STATE_FILE}, and restart the service — or use /replay-note in Claude Code."
     )
@@ -206,7 +231,9 @@ def log_run(uid, subject, plaud_link, run, attempt=1):
     except (json.JSONDecodeError, TypeError):
         summary = (run["stdout"] or "")[-2000:] or None    # fallback: raw stdout tail
     report = extract_report(summary)
-    ok = run["ok"] and not is_error
+    # A clean exit is necessary but NOT sufficient: a permission-blocked or
+    # abandoned run also exits 0 with is_error=False. Require proof of a write.
+    ok = run["ok"] and not is_error and _page_written(report, summary)
     record = {
         "time": datetime.now(timezone.utc).isoformat(),
         "uid": uid,
