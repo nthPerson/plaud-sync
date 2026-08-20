@@ -43,7 +43,8 @@ option strings and picking the single best value for each select field:
 - Area (select — one of): Personal, Academics, Work, Research
     - Research  -> research-project work: FAMAIL, FATE, Caltrans ODA, DiCE Lab research, or any academic-research discussion.
     - Academics -> school lectures, coursework, assignments, study sessions, SCIBER-CT coursework and
-                   program logistics (NOT research projects).
+                   program logistics, and the Fall 2026 courses GEOG 582 / COMPE 510 / BDA 696
+                   (NOT research projects).
     - Work      -> LARK, Sidekick AI assistant, Car Sounds, Construction Diagram/Doc AI, client/partner calls, professional or business dev work.
     - Personal  -> personal memos, reminders, ideas, health topics, or goals not tied to work/school/research.
 
@@ -55,7 +56,7 @@ option strings and picking the single best value for each select field:
     - For non-meetings, infer from content — get_file returns NO template or folder metadata, so the
       content is the only signal. Use "Goal" for goal-setting / objective-planning recordings.
 
-- Project (select — one of): FAMAIL, LARK, Construction Diagram/Doc AI, Car Sounds, Caltrans, Evidential Deep Learning, DiCE Lab, Personal, SCIBER-CT, Unknown
+- Project (select — one of): FAMAIL, LARK, Construction Diagram/Doc AI, Car Sounds, Caltrans, Evidential Deep Learning, DiCE Lab, SCIBER-CT, GEOG 582, COMPE 510, BDA 696, Personal, Unknown
     - FAMAIL              -> fairness-aware (multi-agent) imitation learning research; GAIL, KDD paper,
                             fairness metrics, fairness-aware trajectory editing, FATE.
     - LARK                -> merchant card-processing statement analysis; interchange, downgrades,
@@ -72,14 +73,28 @@ option strings and picking the single best value for each select field:
     - SCIBER-CT           -> SCIBER-CT, pronounced "cyber city" — SDSU's NSF Research Traineeship (NRT)
                             graduate certificate program; the user is an NRT Fellow in the inaugural
                             cohort. Covers the 15-unit certificate (two ARX courses + two construction
-                            courses + 3 research/internship units); courses CON E 652, CON E 656,
-                            COMP E 510, ME 532; the ARX framework (AI & Autonomy, Robotics &
+                            courses + 3 research/internship units) and certificate course PLANNING
+                            (CON E 652/656, COMP E 510, ME 532 — but course CONTENT files under the
+                            course's own project; see tie-breakers); the ARX framework (AI & Autonomy, Robotics &
                             Automation, Advanced Comms & XR); Canvas normalization modules;
                             professional-development workshops; the required paid Summer 2027
                             internship; the annual hackathon and research symposium; the UVA Link Lab
                             visit; cohort/orientation sessions; and program admin — stipend and
                             PaymentWorks, RCR/CITI training, travel, financial aid, sciber-ct@sdsu.edu,
                             Dr. Haririan/Akhavian (Director/PI) and Max (Program Manager).
+    - GEOG 582            -> Fall 2026 course "Intro to GIS Programming" (instructor Atsushi Nara):
+                            GIS programming, geospatial data and spatial analysis, spatial Python
+                            (ArcPy/ArcGIS, QGIS, GDAL, GeoPandas), mapping — this course's lectures,
+                            assignments, and projects.
+    - COMPE 510           -> Fall 2026 course "Machine Learning for Engineers" (instructor Dr. Junfei
+                            Xie): ML course content — lectures, assignments, exams, study sessions
+                            (regression, classification, neural networks, model evaluation). This is
+                            also the user's SCIBER-CT ARX course, but its course CONTENT files here,
+                            NOT under SCIBER-CT.
+    - BDA 696             -> Fall 2026 course "Process & Model Big Data" (instructor Ryan Lafler):
+                            big-data processing and modeling course — data pipelines, SQL/Spark-style
+                            processing, modeling at scale — this course's lectures, assignments, and
+                            group project.
     - Personal            -> personal-life notes not tied to work, school, or research: memos,
                             reminders, ideas, journaling and reflections, health, exercise, personal
                             goals, budgeting, home and errands, travel.
@@ -93,6 +108,12 @@ option strings and picking the single best value for each select field:
       work is DiCE Lab. Dr. Akhavian leads both, so his presence alone does not decide it.
     - Prefer the most specific project over a broader one — a note about construction digital twins is
       Evidential Deep Learning, not DiCE Lab.
+    - Class content vs SCIBER-CT: a note about a specific course's CONTENT — its lectures, assignments,
+      exams, study sessions — goes to that course's project (GEOG 582, COMPE 510, BDA 696), with
+      Area = Academics and Type = Lecture/Coursework as appropriate. COMPE 510 doubles as the user's
+      SCIBER-CT ARX course: its course content is still COMPE 510; only traineeship-level matters
+      (counting the course toward the certificate, program logistics, cohort/stipend/internship
+      business) are SCIBER-CT.
 
 - Tags (multi-select — choose all that apply): Meeting, Idea, Task, Follow-up, Personal
     - Meeting   -> a multi-person meeting or call.

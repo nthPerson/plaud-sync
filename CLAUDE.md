@@ -176,7 +176,7 @@ Schema (the prompt must stay in sync with these exact option strings):
 - `Type` — **Meeting** · Reminder · Goal · Research · Dev · Client · Lecture · Coursework · Personal
   (Meeting detection is a first-class job: this DB replaces Notion's AI Meeting Notes)
 - `Project` — FAMAIL · LARK · Construction Diagram/Doc AI · Car Sounds · Caltrans · Evidential Deep
-  Learning · DiCE Lab · SCIBER-CT · Personal · Unknown
+  Learning · DiCE Lab · SCIBER-CT · GEOG 582 · COMPE 510 · BDA 696 · Personal · Unknown
 - `Tags` (multi) — Meeting · Idea · Task · Follow-up · Personal
 - `Source Link` (url) — set by the prompt to `https://web.plaud.ai/file/<recording id>` (clickable join key).
 - `Meeting Date` (date) — set to the recording's start date+time ONLY when Type = Meeting; the
@@ -194,6 +194,14 @@ for a work/academic/research note with no identifiable project, and feeds *📥 
 (`https://app.notion.com/p/3c2eb3065110815dbceffcf1729a0ab8`). The prompt enforces this: `Area = Personal`
 ⇒ `Project = Personal`, never `Unknown`. Merging the two was considered and rejected — it would have
 dumped ambiguous work/school notes onto the Personal Dashboard.
+
+**Fall 2026 courses are Projects named by course code** — GEOG 582 (Intro to GIS Programming, Nara),
+COMPE 510 (Machine Learning for Engineers, Xie), BDA 696 (Process & Model Big Data, Lafler) — each with
+a course dashboard page in the Courses DB carrying a `Project = <code>`-filtered Plaud view plus
+relation-filtered Assignments/Lectures/Class Notes/Group Project views. COMPE 510 doubles as the
+SCIBER-CT ARX course: course CONTENT files to `COMPE 510`; only traineeship-level matters file to
+`SCIBER-CT` (the prompt's tie-breakers encode this). When a semester ends, the course options can be
+retired from the prompt but must stay in the Notion select or old rows lose their value.
 
 **`SCIBER-CT` vs `DiCE Lab` are distinct** and both trace to Dr. Akhavian, so his presence in a note
 decides nothing. SCIBER-CT is the NSF NRT traineeship (certificate coursework, cohort, stipend/RCR,
