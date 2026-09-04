@@ -50,7 +50,9 @@ Task commands:
                                                     text, else "Unknown"; personal-life items ->
                                                     "Personal"), Area to match, Effort best guess,
                                                     Mentions 1, Context = the original line.
-Leave Priority, Score and Why now alone — the planner owns them.
+Leave Priority and Score alone — the planner owns them. After any change to Due or Status, set
+"Why now" to one interim sentence ("Deferred by email to Sep 30 — re-ranked at the next planner
+run") so the Today view never shows a stale reason.
 
 Calendar commands (Google Calendar MCP, primary calendar, America/Los_Angeles). A meeting,
 appointment, call or event is NOT a task — it lives on the calendar only:

@@ -228,7 +228,11 @@ reading", "I'm waiting on Max for the stipend form" — apply it to the Tasks da
      - drop / remove / cancel / never mind               -> Status "Dropped"; append
                                                            "Dropped by voice <date>" to Context;
                                                            then delete its linked calendar event
-                                                           under the evidence rule in item 3
+                                                           under the evidence rule in item 3 and
+                                                           CLEAR "Calendar Event" once deleted
+     After any change to Due or Status, also set "Why now" to one interim sentence such as
+     "Deferred by voice to Sep 30 — re-ranked at the next planner run", so the Today view never
+     shows a stale reason; leave Score and Priority alone (the planner recomputes them).
      - waiting on <person>                               -> Status "Waiting", Waiting On = person
      - urgent / top priority / can wait / low priority   -> Manual Priority P0 / P1 / P2 / P3
      - started / working on                              -> Status "In progress"
