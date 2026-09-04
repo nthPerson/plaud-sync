@@ -70,11 +70,15 @@ and one added step in the sync prompt.
 | **Tasks** database | `https://app.notion.com/p/b1c52e69d3924aea8962bee32440ffbe` |
 | Tasks **data source** (what the prompts write to) | `collection://be0b1624-4ea6-43dd-acc2-3a828a8ab07e` |
 | **☀️ Today** page (body replaced each run) | `https://app.notion.com/p/3d1eb30651108180942dff91930bdd10` |
+| **Command Log** database (added 2026-09-04) | `https://app.notion.com/p/08ac20a559d646c89b36d922da7c58c1` |
+| Command Log **data source** | `collection://f91d236c-b7d9-4abe-82ca-f0ab28f5288b` |
 
-The Planner page holds a callout, the Tasks database, the Today page, and an inline linked
-view "Today's tasks". The Tasks database has views **Today**, **Upcoming**, **By project**
-(board), **Waiting**, **Inbox**, **Done**, **Calendar** (by Due), and **Open** (every row not
-Done/Dropped — the view the prompts READ through, see below).
+The Planner page (re-laid out 2026-09-04 at Robert's request: everything in one place) holds a
+callout, the Today page, the **Tasks** database *inline* with every view visible (**Today**,
+**Upcoming**, **By project** (board), **Waiting**, **Inbox**, **Done**, **Calendar** (by Due), and
+**Open** — the view the prompts READ through, see below), the **Command Log** database inline
+(views **All**, **Voice**, **Email**, **Planner runs**, **Needs attention**), and a linked view
+**Command recordings** of the Plaud notes DB filtered `Project = Planner`.
 
 **Notion SQL is metered on this workspace.** On 2026-09-03 `notion-query-data-sources` in SQL
 mode hit "usage limit for Query Data Source" after ~15 queries in a session, while view mode
@@ -475,3 +479,18 @@ Command runs read one view and make a few page updates. Measured 2026-09-03: `ad
 (Personal)` cost **$0.78 / 58 s** on Sonnet (the view read dominates). Planner runs are unchanged
 (§11). If the command channel gets chatty, batching into the next run is a one-line change in the
 watcher, and `PLANNER_MODEL=haiku` for commands is the other lever.
+
+## 16. Command recordings and the Command Log (added 2026-09-04)
+
+- **`Planner` Project option** on the Plaud Synced Notes DB (not on Tasks). The sync prompt files
+  a recording there when its primary purpose is managing the task list or calendar; mixed
+  recordings keep their real project. For Planner recordings Step 3c runs BEFORE the page is
+  written (changes land ~2 minutes sooner) and the page body is Summary + Transcript only.
+- **Command Log DB** (§4): every voice command (sync prompt Step 3c item 5), every email command
+  (planner-commands-prompt.txt, including "Nothing" misfires) and every planner run
+  (planner-prompt.txt Step 5b) writes one row: Time, Channel, Result, Command, Applied/Created/
+  Calendar counts, Unresolved, Details, Tasks relation (two-way: each task shows its command
+  history as `Command Log`), Recording relation for voice. The watcher passes the email channel
+  (reply / subject / free text) into the commands prompt. Failed runs are not logged here.
+- The morning/evening briefs still list "Applied since the last run" from `planner-runs.jsonl`;
+  the Command Log is the durable, browsable version of the same information.

@@ -4,7 +4,8 @@ nothing more. Deleting is allowed ONLY under the evidence rule in Step 2.
 
 # Inputs
 Appended below this prompt: the command text (quoted reply text already stripped), the sender,
-the email's date, and today's date.
+the email's date, today's date, and the Channel — "Email reply" (a reply to a planner brief),
+"Email subject" (the command was the subject line, e.g. from a mailto link) or "Email free text".
 
 # Step 1 — Read the open tasks
 Read the Tasks database's "Open" view with `mcp__notion__notion-query-data-sources` in VIEW mode
@@ -94,6 +95,19 @@ follow-through for tasks: if a task's Due changed and its "Calendar Event" is se
 to the new date keeping it all-day or timed as it was; if a task was dropped and rule 1 holds,
 delete its event and clear "Calendar Event". A Done task keeps its event as history.
 
+Finally, ALWAYS create ONE row in the Command Log data source (even when nothing was applied — a
+misfire is worth seeing):
+    collection://f91d236c-b7d9-4abe-82ca-f0ab28f5288b   ("Command Log", on the Planner page)
+    Name       "<Channel>: <≤ 60-char summary>"   e.g. "Email subject: done Task-4"
+    Time       the email's date and time — "date:Time:start" with "date:Time:is_datetime" 1
+    Channel    the Channel given in the inputs
+    Result     "Applied" (all done) · "Partial" (something unresolved) · "Nothing" (no command found)
+    Command    the command text as received, ≤ 1000 characters
+    Applied / Created / Calendar   counts
+    Unresolved the unresolved list joined with "; " (empty when none)
+    Details    one line per change (the "detail" strings)
+    Tasks      relation to every task touched (URLs from the view rows)
+
 # Step 4 — Report
 Output the raw JSON object ONLY — your final message must start with { and end with }. No prose,
 no markdown fences. Shape:
@@ -101,7 +115,8 @@ no markdown fences. Shape:
   "applied":    [ { "task_id": "Task-17", "name": "...", "action": "done", "detail": "Completed 2026-09-04" } ],
   "created":    [ { "task_id": "Task-31", "name": "..." } ],
   "calendar":   [ { "action": "created" | "moved" | "deleted", "title": "...", "when": "2026-09-10 12:00–13:00 PDT", "link": "<htmlLink or empty>" } ],
-  "unresolved": [ "<command or phrase>: <why it could not be applied>" ]
+  "unresolved": [ "<command or phrase>: <why it could not be applied>" ],
+  "command_log": "<URL of the Command Log row>"
 }
-If nothing in the input is a command at all, return
-{"applied": [], "created": [], "calendar": [], "unresolved": ["no command found"]}.
+If nothing in the input is a command at all, still write the log row (Result "Nothing") and return
+{"applied": [], "created": [], "calendar": [], "unresolved": ["no command found"], "command_log": "<url>"}.

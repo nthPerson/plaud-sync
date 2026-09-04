@@ -412,7 +412,14 @@ def process_command(server, uid, processed):
     subject = decode_str(msg.get("Subject"))
     sender = parseaddr(msg.get("From", ""))[1]
     mid = (msg.get("Message-ID") or "").strip()
-    text, is_cmd = command_text(subject, get_plain_text(msg))
+    plain = get_plain_text(msg)
+    text, is_cmd = command_text(subject, plain)
+    if "[planner]" in (subject or "").lower():
+        channel = "Email reply"
+    elif not strip_quoted(plain):
+        channel = "Email subject"       # e.g. a mailto link from the brief
+    else:
+        channel = "Email free text"
     if not is_cmd:
         log.info("Mail from command sender uid=%s is not a command (subject=%r) — ignored", uid, subject)
         processed.add(uid)
@@ -427,7 +434,8 @@ def process_command(server, uid, processed):
         when = msg.get("Date") or "unknown"
     today = datetime.now().astimezone().strftime("%Y-%m-%d (%A)")
     full = (prompt + f"\n\n---\n## Command email\n- From: {sender}\n- Email date: {when}\n"
-            f"- Today: {today}\n- Message-ID: {mid or 'none'}\n\n### Command text\n{text}\n")
+            f"- Today: {today}\n- Message-ID: {mid or 'none'}\n- Channel: {channel}\n\n"
+            f"### Command text\n{text}\n")
     run = run_claude(full, timeout=COMMAND_TIMEOUT)
 
     envelope, report, cost, duration_ms = None, None, None, None
@@ -443,7 +451,7 @@ def process_command(server, uid, processed):
     with open(PLANNER_RUNS_LOG, "a", encoding="utf-8") as f:
         f.write(json.dumps({
             "time": datetime.now(timezone.utc).isoformat(), "kind": "command", "uid": uid,
-            "from": sender, "subject": subject, "command": text[:1000], "ok": ok,
+            "from": sender, "subject": subject, "channel": channel, "command": text[:1000], "ok": ok,
             "cost_usd": cost, "duration_ms": duration_ms, "report": report,
             "error": None if ok else ((run["stderr"] or "")[-800:] or "no report"),
         }, ensure_ascii=False) + "\n")

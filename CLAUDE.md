@@ -187,7 +187,9 @@ Schema (the prompt must stay in sync with these exact option strings):
 - `Type` — **Meeting** · Reminder · Goal · Research · Dev · Client · Lecture · Coursework · Personal
   (Meeting detection is a first-class job: this DB replaces Notion's AI Meeting Notes)
 - `Project` — FAMAIL · LARK · Construction Diagram/Doc AI · Car Sounds · Caltrans · Evidential Deep
-  Learning · DiCE Lab · SCIBER-CT · BDA M.S. · GEOG 582 · COMPE 510 · BDA 696 · Personal · Unknown
+  Learning · DiCE Lab · SCIBER-CT · BDA M.S. · GEOG 582 · COMPE 510 · BDA 696 · Personal · Unknown ·
+  **Planner** (added 2026-09-04: command recordings whose purpose is managing the task list or
+  calendar; they surface on the 📋 Planner page, not on a project dashboard — see the Planner section)
 - `Tags` (multi) — Meeting · Idea · Task · Follow-up · Personal
 - `Source Link` (url) — set by the prompt to `https://web.plaud.ai/file/<recording id>` (clickable join key).
 - `Meeting Date` (date) — set to the recording's start date+time ONLY when Type = Meeting; the
@@ -256,6 +258,22 @@ Notion objects:
   `https://www.notion.so/b1c52e69d3924aea8962bee32440ffbe?v=3d1eb306511081a5a601000c7530ed1a`
 - **☀️ Today** page `https://app.notion.com/p/3d1eb30651108180942dff91930bdd10` — body replaced
   by every planner run.
+- **Command Log** DB `https://app.notion.com/p/08ac20a559d646c89b36d922da7c58c1`, data source
+  `collection://f91d236c-b7d9-4abe-82ca-f0ab28f5288b` (added 2026-09-04) — one row per voice
+  command, email command and planner run, written by Claude at the end of each run (Channel:
+  Voice · Email reply · Email subject · Email free text · Planner run; Result: Applied · Partial ·
+  Nothing; relations to the tasks touched and, for voice, the recording). Views: All · Voice ·
+  Email · Planner runs · Needs attention. Failed runs never reach it — those live only in
+  `planner-runs.jsonl` and the failure email.
+- The **📋 Planner page layout** (2026-09-04): callout → Today → Tasks (inline, every view) →
+  Command Log (inline) → "Command recordings" (linked view of Plaud notes, `Project = Planner`).
+  Both databases are *inline* so all their views show on the page — keep it that way.
+
+**Command recordings are `Project = Planner`.** When a recording's primary purpose is managing the
+list ("if you're an agent managing my task list…", "mark X done", "push Y to Thursday"), the sync
+prompt files it under `Planner`, runs Step 3c BEFORE writing the page so the changes land ~2 min
+sooner, and writes a light page (Summary + Transcript, no mind map). Mixed recordings keep their
+real project. Tasks never carry `Planner` as a Project — the option exists only on the Plaud DB.
 
 **The watcher now has a second job.** Besides Plaud mail, `plaud_watcher.py` treats unseen mail
 FROM Robert's own addresses (`commands.senders` + `NOTIFY_EMAIL`) as planner commands when the

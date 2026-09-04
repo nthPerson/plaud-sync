@@ -114,6 +114,13 @@ Link each task by its Notion row URL. Layout (omit empty sections):
 
     Reply to the brief with `done Task-17`, `defer Task-19 mon`, `drop Task-4`, `add … by …` — one per line.
 
+# Step 5b — Log the run
+Create ONE row in the Command Log data source collection://f91d236c-b7d9-4abe-82ca-f0ab28f5288b:
+    Name "Planner <mode> run" · Time = now (is_datetime 1) · Channel "Planner run" · Result "Applied"
+    Command = the one-sentence verdict · Applied = tasks updated · Created = tasks created ·
+    Calendar = 0 · Details = "created n · updated n · merged n · completed n · overdue n · inbox n ·
+    open n | ingested canvas n · email n · calendar n" · Tasks = relation to the Must rows.
+
 # Step 6 — Compose the email brief
 Same content as the Today page, as a self-contained HTML fragment: inline styles only, system font
 stack, nothing wider than 640px, tables with 1px #ddd bottom borders and 6px 10px padding, no
@@ -139,6 +146,7 @@ no markdown fences. Shape:
   "tasks": { "created": <n>, "updated": <n>, "merged": <n>, "completed": <n>, "overdue": <n>, "inbox": <n>, "open": <n> },
   "must": [ "Task-17 <task>", ... ],
   "today_page": { "url": "https://app.notion.com/p/3d1eb30651108180942dff91930bdd10" },
+  "command_log": "<URL of the Command Log row>",
   "email": {
     "subject": "[planner] <Dow Mon D> — <n> must · <m> hard deadlines this week",
     "body_html": "<the HTML fragment>",

@@ -56,7 +56,7 @@ option strings and picking the single best value for each select field:
     - For non-meetings, infer from content — get_file returns NO template or folder metadata, so the
       content is the only signal. Use "Goal" for goal-setting / objective-planning recordings.
 
-- Project (select — one of): FAMAIL, LARK, Construction Diagram/Doc AI, Car Sounds, Caltrans, Evidential Deep Learning, DiCE Lab, SCIBER-CT, BDA M.S., GEOG 582, COMPE 510, BDA 696, Personal, Unknown
+- Project (select — one of): FAMAIL, LARK, Construction Diagram/Doc AI, Car Sounds, Caltrans, Evidential Deep Learning, DiCE Lab, SCIBER-CT, BDA M.S., GEOG 582, COMPE 510, BDA 696, Personal, Unknown, Planner
     - FAMAIL              -> fairness-aware (multi-agent) imitation learning research; GAIL, KDD paper,
                             fairness metrics, fairness-aware trajectory editing, FATE.
     - LARK                -> merchant card-processing statement analysis; interchange, downgrades,
@@ -108,9 +108,20 @@ option strings and picking the single best value for each select field:
                             goals, budgeting, home and errands, travel.
     - Unknown             -> ONLY for a work/academic/research note with no identifiable project.
                             NEVER use Unknown for a personal note — that is Personal.
+    - Planner             -> a COMMAND recording: its primary purpose is to manage the task list or
+                            the calendar — "if you're an agent managing my task list…", "mark the
+                            Python assignment done", "push Reza's task to next Thursday", "put a
+                            meeting with Max on my calendar" — with no substantive content of its
+                            own. These notes feed the 📋 Planner page, not a project dashboard, so
+                            they do not clutter the projects they mention. A recording that mixes
+                            real content with a few instructions files under its REAL project
+                            (Step 3c still applies the instructions).
 
   Project tie-breakers:
-    - If Area = Personal, Project is ALWAYS Personal — never Unknown.
+    - Command recordings are Planner regardless of Area or the projects of the tasks they touch;
+      give them Area = the area of the tasks touched (Academics for course/degree tasks, Personal
+      for personal-life tasks) and Type = Reminder.
+    - Otherwise, if Area = Personal, Project is ALWAYS Personal — never Unknown.
     - SCIBER-CT vs DiCE Lab: classify by what the note is ABOUT. The traineeship program (coursework,
       cohort, program admin, internship, hackathon, symposium) is SCIBER-CT; the research lab's own
       work is DiCE Lab. Dr. Akhavian leads both, so his presence alone does not decide it.
@@ -144,7 +155,8 @@ option strings and picking the single best value for each select field:
 
 - Do NOT set "Synced" — it is an automatic created-time field.
 
-Page body — write three sections:
+Page body — write three sections (for Project = Planner notes, only the first and the last: no
+mind map, the transcript IS the audit trail):
     ## Summary
     <the Plaud AI summary, preserving its headings/structure>
 
@@ -160,6 +172,11 @@ Page body — write three sections:
     <the FULL transcript from Step 1's `get_file` payload (data_type "transaction"). Format each
     segment as its own paragraph prefixed with the speaker in bold — e.g. **Speaker 1:** text.
     Include every segment verbatim; do not summarize, truncate, or paraphrase.>
+
+# Ordering for command recordings
+If the recording is a command recording (Project = Planner), run Step 3c FIRST — it needs no page
+and Robert wants the changes to land as early as possible — then Step 3 (light body), then Step 3b
+(usually nothing new), then Step 4 and the Command Log row in Step 3c item 5.
 
 # Step 3b — Extract action items into the "Tasks" Notion database
 Write directly to this data source — do NOT search for it:
@@ -258,7 +275,19 @@ reading", "I'm waiting on Max for the stipend form" — apply it to the Tasks da
      "next <weekday>" means that weekday in the following calendar week.
   4. The recording still gets its own note page from Step 3 (audit trail), but the things it
      merely references do NOT become new task rows — only Step 3b's genuine new action items do.
-Report these in Step 5 as "task_updates", "calendar_updates" and "unresolved".
+  5. If any instruction was applied or attempted, create ONE row in the Command Log data source
+        collection://f91d236c-b7d9-4abe-82ca-f0ab28f5288b   ("Command Log", on the Planner page)
+     once the note page exists (so it can be linked):
+        Name       "Voice: <≤ 60-char summary>"  e.g. "Voice: defer Task-30, drop Task-31/32"
+        Time       the recording's start time — "date:Time:start" with "date:Time:is_datetime" 1
+        Channel    "Voice"
+        Result     "Applied" when nothing is unresolved, else "Partial"
+        Command    the instruction sentences from the transcript, ≤ 1000 characters
+        Applied / Created / Calendar   counts (tasks changed, tasks created by 3b, calendar changes)
+        Unresolved the unresolved list joined with "; " (empty when none)
+        Details    one line per change, same wording as task_updates / calendar_updates
+        Tasks      relation to every task row touched · Recording  relation to this note's page
+Report these in Step 5 as "task_updates", "calendar_updates", "unresolved" and "command_log".
 
 # Step 4 — Create Google Calendar events (only for genuinely dated items)
 Scan the summary and transcript for anything with a concrete date/time or deadline: meetings to
@@ -291,6 +320,7 @@ Shape:
   "tasks": { "created": <n>, "updated": <n>, "titles": [ ... ] },
   "task_updates": [ { "task_id": "Task-17", "name": ..., "action": "done" | "defer" | "drop" | "waiting" | "priority" | "start" | "correct", "detail": ... } ],
   "calendar_updates": [ { "action": "created" | "moved" | "deleted", "title": ..., "when": ..., "link": ... } ],
-  "unresolved": [ "<spoken instruction that could not be matched, and why>" ]
+  "unresolved": [ "<spoken instruction that could not be matched, and why>" ],
+  "command_log": "<URL of the Command Log row, or null when no instruction was applied or attempted>"
 }
 Do NOT include the transcript or summary text in the report.
