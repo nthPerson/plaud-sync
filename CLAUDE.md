@@ -31,7 +31,8 @@ Every decision that shapes output — the Notion database, the Area/Type/Project
 what each option means, the calendar rules, the JSON report format — lives in the prompt file.
 
 To change what the automation *does*, edit `plaud-sync-prompt.txt`. Touching the Python is almost
-always the wrong move. Note that the prompt is read once at startup, so a prompt edit still requires
+always the wrong move. Since 2026-09-03 the prompt also writes action items to the planner's
+Tasks DB (see the Planner section). Note that the prompt is read once at startup, so a prompt edit still requires
 a service restart.
 
 ## Runtime layout
@@ -46,6 +47,7 @@ a service restart.
 | `runs.jsonl` | One JSON record per Claude run: `ok`, `attempt` (1 or 2), `cost_usd`, `duration_ms`, `report` (parsed JSON report; `summary` holds raw text only when parsing fails). |
 | `weekly_digest.py` + `weekly-digest-prompt.txt` | Sunday-evening digest: headless Claude queries the Notion DB and composes an HTML email (tables, inline styles only) with a plain-text fallback; script sends it to `NOTIFY_EMAIL`. |
 | `plaud-digest.service` / `plaud-digest.timer` | Systemd units for the digest (installed copies live in `/etc/systemd/system/`). |
+| `planner.py`, `planner-prompt.txt`, `planner-commands-prompt.txt`, `planner-sources.json`, `planner@.service` + timers | The planner (see the Planner section). `planner-runs.jsonl` / `planner-state.json` are its git-ignored runtime files. |
 | `plaud-sync.log` | Human log (also goes to journald). |
 | `.venv/` | Python 3.12 venv holding `IMAPClient==3.1.0`. **The service runs this interpreter.** |
 
@@ -135,6 +137,15 @@ Notion link in the final text) that a page actually landed. Before that fix the 
 `ok=True`, so it never retried or alerted. A false negative there is harmless: the prompt's
 create-or-update idempotency means the retry updates the page instead of duplicating it.
 
+**Notion SQL queries are metered on this workspace plan.** `notion-query-data-sources` in SQL
+mode returned "Your workspace has reached the usage limit for Query Data Source" on 2026-09-03
+after roughly fifteen queries in one session. The sync's Step 2 (existing-page check) and Step
+3b (task dedup) both query, and the planner will query several times per run, so the budget is
+shared. The tool documents **view mode** (`mode: "view"` with a `view_url`) as quota-free on
+every plan, so prompts should read through pre-built views — the Tasks DB has an **Open** view
+for exactly this — and treat SQL as the fallback, never the default. Fetches, searches, and
+page writes are not metered.
+
 **Auth is inherited, not configured.** Headless `claude -p` uses the interactive login and
 user-scope MCP OAuth tokens of user `robert`. That is why the unit pins `User=robert` and
 `Environment=HOME=/home/robert`. Running the watcher as any other user silently fails at the Claude
@@ -183,6 +194,8 @@ Schema (the prompt must stay in sync with these exact option strings):
   project dashboards use it as their meeting timeline column.
 - `Synced` (created_time, auto). A `Reviewed` checkbox once existed but was removed — the user
   decided a review workflow was maintenance they'd never keep up with; don't reintroduce one.
+- `Tasks` (relation, auto-added 2026-09-03) — the synced side of the planner's `Notes` relation;
+  lists the tasks extracted from that recording. Nothing in the sync prompt sets it directly.
 
 Project dashboards consume this DB via **linked database views** (filtered `Project = X`, with a
 `Type = Meeting` tab) — there is deliberately NO distribution automation copying notes elsewhere,
@@ -215,6 +228,84 @@ Plaud view.
 decides nothing. SCIBER-CT is the NSF NRT traineeship (certificate coursework, cohort, stipend/RCR,
 internship, hackathon, symposium); DiCE Lab is the research lab's own work. Dashboards:
 *SCIBER-CT Dashboard* (`3c2eb3065110808aacaac47ceac0a82b`), *DiCE Lab* (`257eb306511080fdaeded25422df0518`).
+
+## Planner (task/deadline automation)
+
+A sibling automation designed and built 2026-09-03; the full design is `PLANNER-SPEC.md` (read
+it before touching anything planner-related). Same principles as the watcher: Python gathers,
+Claude decides and writes, the prompt is the program.
+
+| Path | Role |
+|---|---|
+| `planner.py` | `--mode morning\|evening\|now [--dry-run] [--no-email]`. Gathers Canvas (API) + forwarded email + recent commands into a text bundle, runs `claude -p` with `planner-prompt.txt`, emails the brief to `NOTIFY_EMAIL` with a `+planner` tag, logs to `planner-runs.jsonl`, keeps `planner-state.json`. |
+| `planner-prompt.txt` | The planner program: ingest/upsert by `Source Key`, dedup, hygiene, scoring policy (project weights live here), Today page layout, email brief. |
+| `planner-commands-prompt.txt` | Applies emailed commands (`done TK-17`, `defer TK-19 mon`, `add … by …`, free text) to Tasks. Run by **the watcher**, read per use (no restart needed to edit it). |
+| `planner-sources.json` | Email allow/deny globs (matched against display name AND address), Canvas course map, `commands.senders`. |
+| `planner@.service`, `planner@morning.timer` (06:30), `planner@evening.timer` (16:00) | Template unit: `%i` is the mode. Install with `sudo cp … /etc/systemd/system/ && sudo systemctl daemon-reload && sudo systemctl enable --now planner@morning.timer planner@evening.timer`. |
+| `/plan-now [mode] [--dry-run]` | Foreground run from Claude Code. |
+
+Notion objects:
+- **📋 Planner** page `https://app.notion.com/p/3d1eb3065110819fa358d3af8a3158b8` (top-level)
+- **Tasks** DB `https://app.notion.com/p/b1c52e69d3924aea8962bee32440ffbe`, data source
+  `collection://be0b1624-4ea6-43dd-acc2-3a828a8ab07e` — Status is a *select* (Inbox · Next ·
+  In progress · Waiting · Done · Dropped) because the API cannot define status-type options.
+  `Source Key` is the idempotency key; `Task ID` is a unique ID (`Task-<n>`, the code Robert types
+  in replies — prefix changed from `TK` on 2026-09-03 without renumbering); `Priority`/`Score`/
+  `Why now` are planner-owned; `Manual Priority` is Robert's prior.
+- **Open** view (read path for every prompt — SQL is metered, view mode is not):
+  `https://www.notion.so/b1c52e69d3924aea8962bee32440ffbe?v=3d1eb306511081a5a601000c7530ed1a`
+- **☀️ Today** page `https://app.notion.com/p/3d1eb30651108180942dff91930bdd10` — body replaced
+  by every planner run.
+
+**The watcher now has a second job.** Besides Plaud mail, `plaud_watcher.py` treats unseen mail
+FROM Robert's own addresses (`commands.senders` + `NOTIFY_EMAIL`) as planner commands when the
+subject contains `[planner]`, when the subject/first line starts with a command verb or a task
+code (done, finished, complete, mark, defer, push, postpone, snooze, drop, remove, delete, cancel,
+start, reopen, waiting, priority, note, add, schedule, book, set up, create, new, move,
+reschedule, put, `Task-5`), or — fallback — when the mail is short (≤ 500 chars) and not a
+forward. It applies them immediately via `planner-commands-prompt.txt` (read per use, so prompt
+edits need no restart; regex edits do) and replies with a confirmation. Commands cover tasks AND
+the calendar: "Add an appointment with Reza … next Thursday at 12pm over Zoom" creates an event,
+"move … to …" updates one, "cancel/remove/delete …" deletes one.
+
+**Calendar deletion is allowed only under the evidence rule** (Robert's policy, 2026-09-03: remove
+on good evidence, never on a hunch). A task's linked event may be deleted only when that task is
+explicitly dropped by email or voice; a named event only when exactly one event matches both
+title words and date; never an event with other attendees unless the command explicitly cancels
+the meeting with them. The autonomous planner run (`planner-prompt.txt`) still never deletes.
+
+**`plaud-sync-prompt.txt` Steps 3b/3c write and manage Tasks** (added 2026-09-03): 3b extracts
+Robert's action items into the Tasks DB (keyed `plaud:<recording id>:<n>`, dedup against the Open
+view, `Mentions` bumped instead of duplicating; Step 4 cross-links calendar events into
+`Calendar Event`). 3c applies task instructions spoken in the recording — "mark the Python
+assignment complete", "push Reza's task to next Thursday" — including moving the linked calendar
+event. Validated with the dev loop on the 08-27 Caltrans PC procurement note: 1 row, all
+properties correct, no duplicate events, $1.29 / 127 s on the update path (that note's original
+run cost $0.57; budget roughly +$0.3–0.7 per recording). The report carries
+`"tasks"`, `"task_updates"` and `"unresolved"`.
+
+**Canvas is read through its API, not the ICS feed.** `CANVAS_TOKEN` (personal access token,
+`.env` only) unlocks `/api/v1/planner/items`, which carries submission state — the planner
+closes a task automatically once Canvas shows it submitted, graded, excused or marked complete.
+Without the token the run proceeds with "Canvas skipped". `CANVAS_BASE_URL` defaults to
+`https://sdsu.instructure.com`. `planner-sources.json` → `canvas.skip_context_patterns` drops
+homeroom "courses" (Arts & Letters, EOP, Student Tech) from items and announcements.
+
+**`systemctl start planner@<mode>.service` blocks until the run ends** (`Type=oneshot`, several
+minutes). That is not a hang; add `--no-block` or use the timers.
+
+**Planner cost baseline.** First run 2026-09-03: **$2.14 / 519 s** — bulk creation of 32 tasks from
+27 Canvas items and the calendar, 7 auto-closed from Canvas submission state. Steady-state runs
+should be well under $1; compare `cost_usd` in `planner-runs.jsonl` (`kind: "plan"`) against
+this. Command runs (`kind: "command"`) measured $0.41–0.78. Levers if it drifts: `PLANNER_MODEL=haiku`,
+smaller `canvas.days_ahead`, batching commands into the next run.
+
+**Email into the planner comes by forwarding.** SDSU/Canvas mail is auto-forwarded from
+`rashe7414@sdsu.edu` to the watcher account by a Gmail filter (`from:(sdsu.edu OR
+instructure.com)`); original `From:` headers survive, so `planner-sources.json` allow/deny still
+applies. The planner reads the inbox read-only (`BODY.PEEK`) and tracks seen Message-IDs in
+`planner-state.json`; it never marks mail seen. The watcher is the only thing that marks mail
+seen (Plaud mail and command mail).
 
 ## Cost, and the streamlining goal
 

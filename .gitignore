@@ -11,3 +11,6 @@ processed.json
 processed.json.tmp
 runs.jsonl
 __pycache__/
+planner-state.json
+planner-state.json.tmp
+planner-runs.jsonl
