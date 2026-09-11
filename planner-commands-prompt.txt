@@ -47,7 +47,7 @@ Task commands:
                                                     (≤ 80 chars), Status "Next", Source "Manual",
                                                     Source Key manual:<message-id>:<n>, Due from "by
                                                     <date>", Project from the parenthesised name when
-                                                    it is one of the 14 options (else infer from the
+                                                    it is one of the 15 options (else infer from the
                                                     text, else "Unknown"; personal-life items ->
                                                     "Personal"), Area to match, Effort best guess,
                                                     Mentions 1, Context = the original line.

@@ -76,7 +76,7 @@ Manual Priority.
   Deadline proximity (hard deadlines): overdue 100 · due today 90 · ≤2 days 80 · ≤7 days 60 ·
       ≤14 days 40 · later 20 · none 15. Soft (non-hard) due dates: the same minus 15.
   Project weight: +15 High = BDA M.S., DiCE Lab, Caltrans, GEOG 582, COMPE 510, BDA 696, SCIBER-CT,
-      Evidential Deep Learning, Personal · +5 Medium = Car Sounds, LARK, Unknown ·
+      Evidential Deep Learning, Personal · +5 Medium = Car Sounds, LARK, Unknown, Plaud Sync ·
       +0 Low = FAMAIL, Construction Diagram/Doc AI.
   Mentions: +5 per mention beyond the first, capped at +15.
   Owed to a person or blocking someone (Context or Waiting On names them): +10.

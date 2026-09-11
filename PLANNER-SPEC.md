@@ -109,7 +109,7 @@ Property names and option strings are exact — both prompts depend on them.
 | `Due` | date | Date, with time when the source gives one |
 | `Hard deadline` | checkbox | True for submissions, registrations, cutoffs; false for targets/intentions |
 | `Area` | select | Personal · Academics · Work · Research (same as Plaud DB) |
-| `Project` | select | The 14 Plaud DB options: FAMAIL · LARK · Construction Diagram/Doc AI · Car Sounds · Caltrans · Evidential Deep Learning · DiCE Lab · SCIBER-CT · BDA M.S. · GEOG 582 · COMPE 510 · BDA 696 · Personal · Unknown |
+| `Project` | select | 15 options: FAMAIL · LARK · Construction Diagram/Doc AI · Car Sounds · Caltrans · Evidential Deep Learning · DiCE Lab · SCIBER-CT · BDA M.S. · GEOG 582 · COMPE 510 · BDA 696 · Personal · Unknown · **Plaud Sync** (added 2026-09-11). The Plaud DB carries these plus `Planner`, which never appears on a task. |
 | `Effort` | select | **XS** (≤15 min) · **S** (≤1 h) · **M** (half day) · **L** (multi-day) |
 | `Source` | select | **Plaud** · **Canvas** · **Calendar** · **Email** · **Manual** |
 | `Source Key` | text | Dedup key: `plaud:<file id>:<n>` · `canvas:<UID>` · `gcal:<event id>` · `email:<Message-ID>` · `manual` |

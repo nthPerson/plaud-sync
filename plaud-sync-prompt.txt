@@ -56,7 +56,7 @@ option strings and picking the single best value for each select field:
     - For non-meetings, infer from content — get_file returns NO template or folder metadata, so the
       content is the only signal. Use "Goal" for goal-setting / objective-planning recordings.
 
-- Project (select — one of): FAMAIL, LARK, Construction Diagram/Doc AI, Car Sounds, Caltrans, Evidential Deep Learning, DiCE Lab, SCIBER-CT, BDA M.S., GEOG 582, COMPE 510, BDA 696, Personal, Unknown, Planner
+- Project (select — one of): FAMAIL, LARK, Construction Diagram/Doc AI, Car Sounds, Caltrans, Evidential Deep Learning, DiCE Lab, SCIBER-CT, BDA M.S., GEOG 582, COMPE 510, BDA 696, Personal, Unknown, Planner, Plaud Sync
     - FAMAIL              -> fairness-aware (multi-agent) imitation learning research; GAIL, KDD paper,
                             fairness metrics, fairness-aware trajectory editing, FATE.
     - LARK                -> merchant card-processing statement analysis; interchange, downgrades,
@@ -116,8 +116,18 @@ option strings and picking the single best value for each select field:
                             they do not clutter the projects they mention. A recording that mixes
                             real content with a few instructions files under its REAL project
                             (Step 3c still applies the instructions).
+    - Plaud Sync          -> work ON this automation itself — the Plaud→Notion sync, the planner,
+                            their prompts, the watcher, the Claude skills, cost and token
+                            efficiency, the Notion taxonomy and schema. Design thinking, debugging
+                            notes, and "here is how I want the sync to behave" recordings all belong
+                            here. Area = Personal — it is Robert's own infrastructure, not work,
+                            school, or research.
 
   Project tie-breakers:
+    - Planner vs Plaud Sync: Planner is a recording that ISSUES COMMANDS to the list or the
+      calendar ("mark the quiz done"); Plaud Sync is a recording ABOUT BUILDING OR CHANGING the
+      automation ("the sync prompt should stop creating duplicate events"). A recording that
+      does both keeps Plaud Sync, and Step 3c still applies its instructions.
     - Command recordings are Planner regardless of Area or the projects of the tasks they touch;
       give them Area = the area of the tasks touched (Academics for course/degree tasks, Personal
       for personal-life tasks) and Type = Reminder.

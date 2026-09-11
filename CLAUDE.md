@@ -189,7 +189,11 @@ Schema (the prompt must stay in sync with these exact option strings):
 - `Project` — FAMAIL · LARK · Construction Diagram/Doc AI · Car Sounds · Caltrans · Evidential Deep
   Learning · DiCE Lab · SCIBER-CT · BDA M.S. · GEOG 582 · COMPE 510 · BDA 696 · Personal · Unknown ·
   **Planner** (added 2026-09-04: command recordings whose purpose is managing the task list or
-  calendar; they surface on the 📋 Planner page, not on a project dashboard — see the Planner section)
+  calendar; they surface on the 📋 Planner page, not on a project dashboard — see the Planner section) ·
+  **Plaud Sync** (added 2026-09-11: work ON this automation — prompts, watcher, planner, skills,
+  cost, taxonomy. Area = Personal. Distinct from `Planner`: that ISSUES commands, this BUILDS the
+  thing that runs them. Unlike `Planner`, it exists on the Tasks DB too, and surfaces on the
+  Planner page via the **Automation notes** linked view)
 - `Tags` (multi) — Meeting · Idea · Task · Follow-up · Personal
 - `Source Link` (url) — set by the prompt to `https://web.plaud.ai/file/<recording id>` (clickable join key).
 - `Meeting Date` (date) — set to the recording's start date+time ONLY when Type = Meeting; the
@@ -327,7 +331,17 @@ seen (Plaud mail and command mail).
 
 ## Cost, and the streamlining goal
 
-Runs average **~$0.59 and ~65s** on Sonnet (n=3, pre-optimization). Reducing this is active work.
+**Measured 2026-09-11 (77 runs over 70 recordings):** mean **$1.79**, median $1.42, last-10 mean
+**$2.28**, mean duration 335 s. Adding the planner's two runs a day, the 7-day combined burn is
+**$8.97/day**. Recompute with `.claude/skills/plaud-sync-ops/scripts/runstats.py` rather than
+quoting this paragraph — it is a snapshot, and the last one went stale by 3× before anyone noticed.
+(Cost means exclude `cost_usd` of 0, which marks a run whose result envelope never parsed, not a
+free run; including them understates the mean by ~12%.)
+
+The old **~$0.59 / ~65s (n=3)** figure below predates the transcript being written into the page
+and the whole Tasks/planner layer; it is kept only to explain what the levers were measured
+against. Do not use it as a threshold.
+
 Levers:
 
 1. ✅ *Applied.* The prompt no longer searches for the Notion database — Step 2 writes straight to
@@ -341,3 +355,9 @@ Levers:
 
 The n=3 / ~$0.59 baseline predates all three levers — compare new runs in `runs.jsonl` (`cost_usd`,
 `duration_ms`) against it to quantify the net effect (levers 1–2 push cost down, lever 3 up).
+
+4. ⬜ *Open — **Task-84**.* All three prompts read the Tasks DB by pulling the whole `Open` view
+   (100 rows × 10 properties) and filtering in context. The Notion MCP's `rows` mode does
+   server-side `filter`/`sort`/`limit` and was verified working 2026-09-10. This is now the
+   dominant input in every run; migrating it is the biggest remaining lever, and it needs its own
+   before/after measurement. See `SKILLS-SPEC.md` §9.
