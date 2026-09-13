@@ -37,6 +37,15 @@ done
 
 [[ -f "$SRC/SKILL.md" ]] || { echo "no SKILL.md at $SRC" >&2; exit 1; }
 
+# claude.ai rejects the upload if the frontmatter description contains anything that parses as
+# an XML tag — "SKILL.md description cannot contain XML tags". A placeholder like Task-<n> is
+# enough to trip it (2026-09-12). Claude Code accepts it silently, so check here, not at upload.
+if sed -n '1,/^---$/{/^description:/p}' <(tail -n +2 "$SRC/SKILL.md") | grep -q '[<>]'; then
+  echo "SKILL.md description contains < or > — claude.ai will reject the upload:" >&2
+  grep -n '^description:' "$SRC/SKILL.md" | grep --color=always '[<>]' >&2
+  exit 1
+fi
+
 # The version stamp is how a Claude Chat session reports which copy it has; Chat cannot
 # sync, so a drifted stamp there is the only detectable symptom. Keep it current.
 FILE_STAMP="$(grep -oP '(?<=skill-version: )[0-9-]+' "$SRC/SKILL.md" || true)"

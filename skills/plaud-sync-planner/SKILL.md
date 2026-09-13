@@ -1,9 +1,9 @@
 ---
 name: plaud-sync-planner
-description: Query and maintain Robert's Notion task list, Plaud meeting notes, and Google Calendar — the artifacts the plaud-sync automation produces. Use for tasks, to-dos, deadlines, what is due or overdue, what to work on now, Task-<n> codes, completing / deferring / dropping / adding work, scheduling or moving calendar events, weekly review and backlog grooming, and recalling what was said in a recorded meeting or lecture.
+description: Query and maintain Robert's Notion task list, Plaud meeting notes, and Google Calendar — the artifacts the plaud-sync automation produces. Use for tasks, to-dos, deadlines, what is due or overdue, what to work on now, task codes like Task-17, completing / deferring / dropping / adding work, scheduling or moving calendar events, weekly review and backlog grooming, and recalling what was said in a recorded meeting or lecture.
 ---
 
-<!-- skill-version: 2026-09-11 -->
+<!-- skill-version: 2026-09-12 -->
 
 # Plaud Sync — planner
 
