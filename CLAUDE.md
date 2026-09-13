@@ -166,6 +166,15 @@ genuinely never receives one. The prompt therefore *synthesizes* a Mermaid `mind
 the summary headings + `outline` topics; Notion renders it as a diagram. Don't "fix" a missing mind
 map by hunting for a Plaud API that provides it — it doesn't exist in the MCP.
 
+**Every mind map needs a `layout: cose-bilkent` front-matter override, or Notion can't render it.**
+Notion ships Mermaid 11.16.1 initialised with a global `layout: "elk"`, and ELK crashes on
+`mindmap` diagrams with "Syntax error in Mermaid diagram: Cannot read properties of null (reading
+'re')" — even a six-node map with no punctuation. The syntax was never wrong; every mind map written
+before 2026-09-13 is broken this way. `layout` isn't in Mermaid's `secure` key list, so a
+per-diagram `---\nconfig:\n  layout: cose-bilkent\n---` override wins, and the prompt now requires
+it. (`mindmap.layoutAlgorithm` does NOT work — the global `layout` beats it.) Reproduce locally with
+mermaid-cli and `-c` pointing at `{"layout":"elk"}`.
+
 **Adding a project takes TWO edits — the prompt AND the Notion select.** Listing a new `Project` value
 in `plaud-sync-prompt.txt` does not create it in Notion; the option must also exist on the `Project`
 property of `collection://bbc6c9aa-a96b-4501-a41a-8bd1b5a75866`, or the automation writes a value the

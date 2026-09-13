@@ -176,7 +176,17 @@ mind map, the transcript IS the audit trail):
     Root node = a 2-4 word gist of the title. First-level branches = the outline topics (or the
     summary's top headings if they are better). Leaves = the key points under each. Keep node
     labels under ~6 words and the whole map to roughly 15-30 nodes — a readable diagram, not a
-    dump. Notion renders the ```mermaid block as a diagram.>
+    dump. Notion renders the ```mermaid block as a diagram.
+    The block MUST open with this exact front matter, before the `mindmap` line:
+        ---
+        config:
+          layout: cose-bilkent
+        ---
+    Notion forces Mermaid's ELK layout on every diagram, and ELK crashes on mindmaps ("Cannot
+    read properties of null (reading 're')") — without this override NO mind map renders.
+    Only the root uses a shape, `root((gist))`. Every other label is plain text with no
+    parentheses, brackets or braces — Mermaid reads `Deep Learning (DL)` as a node shape and
+    shows only "DL"; write `Deep Learning, DL` instead. Indent with spaces only.>
 
     ## Transcript
     <the FULL transcript from Step 1's `get_file` payload (data_type "transaction"). Format each
